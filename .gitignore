@@ -16,3 +16,4 @@ env/
 *.log
 
 excel-files/*
+*.xlsx
