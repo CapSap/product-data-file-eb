@@ -78,7 +78,10 @@ def main():
 
         # Calculate the elapsed time and display it
         elapsed_time = time.time() - start_time
-        print(f"Total execution time: {elapsed_time:.2f} seconds.")
+        minutes = elapsed_time // 60  # Get the integer part of minutes
+        seconds = elapsed_time % 60   # Get the remaining seconds
+        print(f"Total execution time: {
+              int(minutes)} minutes {seconds:.2f} seconds.")
 
     process_data(df1)
 
