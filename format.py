@@ -24,7 +24,7 @@ def main():
     df1 = pd.read_excel("excel-files/products.xlsx")
 
     df1_test = df1.sample(
-        n=20,
+        n=3750,
         # random_state=42
     )  # n=15 specifies the number of rows to select, random_state is optional for reproducibility
 
@@ -81,11 +81,13 @@ def main():
         minutes = elapsed_time // 60  # Get the integer part of minutes
         seconds = elapsed_time % 60   # Get the remaining seconds
         print(f"Total execution time: {
-              int(minutes)} minutes {seconds:.2f} seconds.")
+              int(minutes)} minutes {seconds:.2f} seconds."
+              )
 
-    process_data(df1)
+    process_data(df1_test)
 
 
 # Run the main function with cProfile
 if __name__ == "__main__":
+
     cProfile.run('main()', 'profile_output.prof')
