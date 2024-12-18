@@ -1,6 +1,7 @@
 import cProfile
 import re
 import time
+import numpy as np
 import pandas as pd
 from tqdm import tqdm
 
@@ -24,7 +25,7 @@ def main():
     df1 = pd.read_excel("excel-files/products.xlsx")
 
     df1_test = df1.sample(
-        n=3750,
+        n=200,
         # random_state=42
     )  # n=15 specifies the number of rows to select, random_state is optional for reproducibility
 
@@ -34,6 +35,7 @@ def main():
         start_time = time.time()
         # Enable tqdm for pandas apply
         tqdm.pandas()
+
         # Apply SKU processing
         df_input["image_alt"] = df_input["Variant SKU"].apply(process_sku)
 
@@ -42,6 +44,20 @@ def main():
 
         # Optionally, reset the index after dropping rows
         df_cleaned = df_cleaned.reset_index(drop=True)
+
+       # HTML Description Matching Logic
+
+        html_map = df1[df1['Body HTML'].notna()].groupby(
+            df1['Variant SKU'].str.split('-').str[0]
+        )['Body HTML'].first().to_dict()
+
+        def find_html_description(row):
+            sku_prefix = row['Variant SKU'].split('-')[0]
+            return html_map.get(sku_prefix, row['Body HTML'])
+
+        # Apply HTML matching before further processing
+        df_cleaned['Body HTML'] = df_cleaned.apply(
+            find_html_description, axis=1)
 
         # Step 2: Function to process each row and match
 
