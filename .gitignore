@@ -15,5 +15,8 @@ env/
 .DS_Store
 *.log
 
-excel-files/*
+# excel-files/*
 *.xlsx
+
+# profile 
+*.prof
