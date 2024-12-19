@@ -100,7 +100,7 @@ def main():
               int(minutes)} minutes {seconds:.2f} seconds."
               )
 
-    process_data(df1_test)
+    process_data(df1)
 
 
 # Run the main function with cProfile
