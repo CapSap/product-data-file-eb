@@ -8,7 +8,7 @@ from tqdm import tqdm
 
 def main():
     # Function to process SKU
-    def process_sku(sku):
+    def get_sku_wo_size(sku):
         # This will match formats like 'asd123-asd123'
         valid_format = r"^[\w]+-[\w]+$"
         sku = str(sku)  # Ensure it's a string
@@ -37,7 +37,7 @@ def main():
         tqdm.pandas()
 
         # Apply SKU processing
-        df_input["image_alt"] = df_input["Variant SKU"].apply(process_sku)
+        df_input["image_alt"] = df_input["Variant SKU"].apply(get_sku_wo_size)
 
         # Remove rows where the column is blank (NaN or empty)
         df_cleaned = df_input.dropna(subset=["Variant SKU"])
