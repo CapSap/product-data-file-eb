@@ -7,7 +7,7 @@ from tqdm import tqdm
 
 
 def main():
-    # Function to process SKU
+    # Function to remove size from sku
     def get_sku_wo_size(sku):
         # This will match formats like 'asd123-asd123'
         valid_format = r"^[\w]+-[\w]+$"
@@ -19,24 +19,24 @@ def main():
             # Otherwise, remove the last part after the last dash
             return re.sub(r"-\w+$", "", sku)
 
-    # global var. Read the img url Excel file
+    # global vars. Read the img url Excel file
     df2 = pd.read_excel("excel-files/urls.xlsx")
-    # Read the first Excel file
+    # Read the products file from shopify
     df1 = pd.read_excel("excel-files/products.xlsx")
 
+    # smaller DF for testing purposes
     df1_test = df1.sample(
         n=200,
         # random_state=42
     )  # n=15 specifies the number of rows to select, random_state is optional for reproducibility
 
     # main function
-
     def process_data(df_input):
         start_time = time.time()
         # Enable tqdm for pandas apply
         tqdm.pandas()
 
-        # Apply SKU processing
+        # add in the sku without size as image_alt
         df_input["image_alt"] = df_input["Variant SKU"].apply(get_sku_wo_size)
 
         # Remove rows where the column is blank (NaN or empty)
@@ -47,15 +47,18 @@ def main():
 
        # HTML Description Matching Logic
 
+       # create a dictionary that is { first sku word : html body }
         html_map = df1[df1['Body HTML'].notna()].groupby(
             df1['Variant SKU'].str.split('-').str[0]
         )['Body HTML'].first().to_dict()
 
+        # this func accepts a row, and matches it with the dictionary { first sku word : html body }
+        # if nothing is found in the map, return the html body that already exists on the row
         def find_html_description(row):
             sku_prefix = row['Variant SKU'].split('-')[0]
             return html_map.get(sku_prefix, row['Body HTML'])
 
-        # Apply HTML matching before further processing
+        # Apply the HTML matching function to each row in the df
         df_cleaned['Body HTML'] = df_cleaned.apply(
             find_html_description, axis=1)
 
@@ -87,6 +90,9 @@ def main():
 
         df_cleaned.to_excel("modified_file_test.xlsx", index=False)
 
+
+
+
         print(df_cleaned)
 
         # Display completion message
@@ -100,7 +106,7 @@ def main():
               int(minutes)} minutes {seconds:.2f} seconds."
               )
 
-    process_data(df1)
+    process_data(df1_test)
 
 
 # Run the main function with cProfile
