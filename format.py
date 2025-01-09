@@ -19,16 +19,7 @@ def main():
             # Otherwise, remove the last part after the last dash
             return re.sub(r"-\w+$", "", sku)
 
-    # global vars. Read the img url Excel file
-    df2 = pd.read_excel("excel-files/urls.xlsx")
-    # Read the products file from shopify
-    df1 = pd.read_excel("excel-files/products.xlsx")
-
-    # smaller DF for testing purposes
-    df1_test = df1.sample(
-        n=200,
-        # random_state=42
-    )  # n=15 specifies the number of rows to select, random_state is optional for reproducibility
+    # function to create parent rows
 
     # main function
     def process_data(df_input):
@@ -106,7 +97,22 @@ def main():
               int(minutes)} minutes {seconds:.2f} seconds."
               )
 
-    process_data(df1_test)
+    # LOAD THE EXCEL FILES
+    # img url excel file. needs a column called "Image Src" with urls. Get report from shopify
+    df2 = pd.read_excel("excel-files/urls.xlsx")
+    # Read the products file from shopify
+    df1 = pd.read_excel("excel-files/products.xlsx")
+
+    # smaller DF for testing purposes
+    df1_test = df1.sample(
+        n=200,
+        # random_state=42
+    )  # n=15 specifies the number of rows to select, random_state is optional for reproducibility
+
+    df1_first200 = df1.head(200)
+
+    # call the main function
+    process_data(df1_first200)
 
 
 # Run the main function with cProfile
