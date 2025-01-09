@@ -137,9 +137,7 @@ def main():
         elapsed_time = time.time() - start_time
         minutes = elapsed_time // 60  # Get the integer part of minutes
         seconds = elapsed_time % 60   # Get the remaining seconds
-        print(f"Total execution time: {
-              int(minutes)} minutes {seconds:.2f} seconds."
-              )
+        print(f"Total execution time: {int(minutes)} minutes {seconds:.2f} seconds.")
 
     # LOAD THE EXCEL FILES
     # img url excel file. needs a column called "Image Src" with urls. Get report from shopify
