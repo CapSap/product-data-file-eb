@@ -4,6 +4,7 @@ import time
 import numpy as np
 import pandas as pd
 from tqdm import tqdm
+import os
 
 
 def main():
@@ -21,7 +22,28 @@ def main():
 
     # function to create parent rows
 
-    # main function
+    def create_parent_rows(df):
+        parent_rows = df.groupby(df['Variant SKU'].apply(get_sku_wo_size)).agg({
+            'Option1 Value': 'first',
+            'Title': 'first',
+            'Smart Collections': 'first',
+            'Option1 Name': 'first',
+            'Vendor': 'first',
+            'Body HTML': 'first',
+            'image_alt': 'first'
+        }).reset_index()
+
+        parent_rows.rename(columns={'index': 'Variant SKU'}, inplace=True)
+        parent_rows['Option2 Value'] = None
+        parent_rows['Variant Inventory Item ID'] = None
+        parent_rows['Variant ID'] = None
+        parent_rows['Variant Weight'] = None
+        parent_rows['Variant Price'] = None
+
+        return parent_rows
+
+        # main function
+
     def process_data(df_input):
         start_time = time.time()
         # Enable tqdm for pandas apply
@@ -78,13 +100,18 @@ def main():
         # Apply the function to each row with tqdm progress bar
         df_cleaned.progress_apply(
             lambda row: process_row(row.name, row), axis=1)
-
-        df_cleaned.to_excel("modified_file_test.xlsx", index=False)
-
-
-
-
         print(df_cleaned)
+
+        # Create parent rows and merge with cleaned data
+        parent_rows = create_parent_rows(df_cleaned)
+        print(parent_rows)
+        final_df = pd.concat([df_cleaned, parent_rows], ignore_index=True).drop_duplicates(
+            subset=['Variant SKU'], keep='first')
+
+        # Get current date and time formatted as 'YYYY-MM-DD_HH-MM-SS'
+        timestamp = time.strftime("%Y-%m-%d_%H-%M")
+        output_filename = f"final_output_{timestamp}.xlsx"
+        final_df.to_excel(os.path.join("output", output_filename), index=False)
 
         # Display completion message
         print("Script completed successfully!")
