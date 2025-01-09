@@ -40,6 +40,23 @@ def main():
         parent_rows['Variant Weight'] = None
         parent_rows['Variant Price'] = None
 
+        # identify url column names
+        url_columns = [col for col in df.columns if col.startswith('url_')]
+
+        # Initialize URL columns in parent_rows with an empty value
+        for col in url_columns:
+            parent_rows[col] = None
+
+        # Copy URL columns from the first matching child
+        for idx, parent_row in parent_rows.iterrows():
+            sku_prefix = get_sku_wo_size(parent_row['Variant SKU'])
+            matching_rows = df[df['Variant SKU'].apply(
+                get_sku_wo_size) == sku_prefix]
+            if not matching_rows.empty:
+                for col in url_columns:
+                    if col in matching_rows.columns:
+                        parent_rows.at[idx, col] = matching_rows.iloc[0][col]
+
         return parent_rows
 
         # main function
@@ -106,11 +123,11 @@ def main():
         parent_rows = create_parent_rows(df_cleaned)
         print(parent_rows)
         final_df = pd.concat([df_cleaned, parent_rows], ignore_index=True).drop_duplicates(
-            subset=['Variant SKU'], keep='first')
+            subset=['Variant SKU'], keep='first').sort_values(by='Variant SKU')
 
         # Get current date and time formatted as 'YYYY-MM-DD_HH-MM-SS'
-        timestamp = time.strftime("%Y-%m-%d_%H-%M")
-        output_filename = f"final_output_{timestamp}.xlsx"
+        timestamp = time.strftime("%H-%M%p on %A %B %dth")
+        output_filename = f"product data file created at {timestamp}.xlsx"
         final_df.to_excel(os.path.join("output", output_filename), index=False)
 
         # Display completion message
@@ -139,7 +156,7 @@ def main():
     df1_first200 = df1.head(200)
 
     # call the main function
-    process_data(df1_first200)
+    process_data(df1)
 
 
 # Run the main function with cProfile
