@@ -16,6 +16,7 @@ env/
 *.log
 
 # excel-files/*
+output/*.xlsx
 *.xlsx
 
 # profile 
