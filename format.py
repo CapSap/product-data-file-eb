@@ -21,13 +21,10 @@ def main():
             return re.sub(r"-\w+$", "", sku)
 
     # function to create parent rows
-
     def create_parent_rows(df):
         parent_rows = df.groupby(df['Variant SKU'].apply(get_sku_wo_size)).agg({
             'Option1 Value': 'first',
             'Title': 'first',
-            'Smart Collections': 'first',
-            'Option1 Name': 'first',
             'Vendor': 'first',
             'Body HTML': 'first',
             'image_alt': 'first'
@@ -71,6 +68,13 @@ def main():
 
         # Remove rows where the column is blank (NaN or empty)
         df_cleaned = df_input.dropna(subset=["Variant SKU"])
+
+        # clean and remove unwanted columns from the product file
+        columns_to_exclude = ['Variant Inventory Qty',	'Custom Collections', 'Smart Collections', ' Variant Inventory Item ID',	'Variant ID',	'Variant Command',	'Option1 Name',	'Option2 Name', 'Option3 Name',	'Option3 Value'	'Variant Position',
+                              'Variant Image', 'Variant Compare At Price', 	'Variant Taxable', 'Variant Tax Code',	'Variant Inventory Tracker',	'Variant Inventory Policy',	'Variant Fulfillment Service',	'Variant Requires Shipping',	'Variant Inventory Adjust']
+
+        df_cleaned = df_cleaned.drop(
+            columns=columns_to_exclude, errors='ignore')
 
         # Optionally, reset the index after dropping rows
         df_cleaned = df_cleaned.reset_index(drop=True)
@@ -137,7 +141,8 @@ def main():
         elapsed_time = time.time() - start_time
         minutes = elapsed_time // 60  # Get the integer part of minutes
         seconds = elapsed_time % 60   # Get the remaining seconds
-        print(f"Total execution time: {int(minutes)} minutes {seconds:.2f} seconds.")
+        print(f"Total execution time: {
+              int(minutes)} minutes {seconds:.2f} seconds.")
 
     # LOAD THE EXCEL FILES
     # img url excel file. needs a column called "Image Src" with urls. Get report from shopify
@@ -154,7 +159,7 @@ def main():
     df1_first200 = df1.head(200)
 
     # call the main function
-    process_data(df1)
+    process_data(df1_first200)
 
 
 # Run the main function with cProfile
