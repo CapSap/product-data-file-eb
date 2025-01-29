@@ -192,7 +192,7 @@ def main():
     df_all_first1000 = df_all.head(1000)
 
     # Create a URL df
-    df_images = df_all[["Image Src"]].drop_duplicates().reset_index(drop=True)
+    df_images = df_all[["Image Src"]].drop_duplicates().dropna().reset_index(drop=True)
 
     # call the main function
     process_data(df_all_first1000)
