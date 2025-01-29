@@ -189,8 +189,32 @@ def main():
 
         # Get current date and time formatted as 'YYYY-MM-DD_HH-MM-SS'
         timestamp = time.strftime("%H-%M%p on %A %B %dth")
-        output_filename = f"product data file created at {timestamp}.xlsx"
-        final_df.to_excel(os.path.join("output", output_filename), index=False)
+        output_filename = f"product data file created at {timestamp}"
+
+        output_filename_xlsx = f"product_data_{timestamp}.xlsx"
+        output_filename_csv = f"product_data_{timestamp}.csv"
+
+        # Save to CSV
+        final_df.to_csv(os.path.join("output", output_filename_csv ), index=False, quoting=1)
+
+        # Convert ID and Variant Barcode to string format
+        final_df["ID"] = final_df["ID"].astype(int)
+        final_df["Variant Barcode"] = final_df["Variant Barcode"].astype(int)
+
+        # Ensure Excel treats them as text by specifying dtype
+        with pd.ExcelWriter(os.path.join("output", output_filename_xlsx ), engine="xlsxwriter") as writer:
+            final_df.to_excel(writer, index=False, sheet_name="Sheet1")
+            
+            # Get the workbook and worksheet objects
+            workbook = writer.book
+            worksheet = writer.sheets["Sheet1"]
+
+            # Define text format
+            text_format = workbook.add_format({"num_format": "@"})  # "@" forces text format in Excel
+
+            # Apply text format to specific columns
+            worksheet.set_column("A:A", None, text_format)  # Column A (ID)
+            worksheet.set_column("I:I", None, text_format)  # Column I (Variant Barcode)
 
         # Display completion message
         print("Script completed successfully!")
