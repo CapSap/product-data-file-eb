@@ -74,6 +74,33 @@ def main():
 
         # Remove rows where the column is blank (NaN or empty)
         df_cleaned = df_input.dropna(subset=["Variant SKU"])
+        
+
+        # Define the base columns to keep
+        columns_to_keep = [
+            "ID",
+            "Title",
+            "Body HTML",
+            "Vendor",
+            "Variant Inventory Item ID",
+            "Option1 Value",
+            "Option2 Value",
+            "Variant SKU",
+            "Variant Barcode",
+            "Variant Weight",
+            "Variant Weight Unit",
+            "Variant Price",
+            "image_alt",
+        ]
+
+        # Identify dynamically generated URL columns
+        url_columns = [col for col in df_cleaned.columns if col.startswith("url_")]
+
+        # Combine base columns with URL columns
+        final_columns = columns_to_keep + url_columns
+
+        # Keep only the whitelisted columns
+        df_cleaned = df_cleaned[final_columns]
 
         # clean and remove unwanted columns from the product file
         columns_to_exclude = [
@@ -98,7 +125,7 @@ def main():
             "Variant Inventory Adjust",
         ]
 
-        df_cleaned = df_cleaned.drop(columns=columns_to_exclude, errors="ignore")
+       # df_cleaned = df_cleaned.drop(columns=columns_to_exclude, errors="ignore")
 
         # Optionally, reset the index after dropping rows
         df_cleaned = df_cleaned.reset_index(drop=True)
