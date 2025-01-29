@@ -1,4 +1,5 @@
 import os
+import glob
 import cProfile
 import re
 import time
@@ -106,8 +107,8 @@ def main():
 
         # create a dictionary that is { first sku word : html body }
         html_map = (
-            df1[df1["Body HTML"].notna()]
-            .groupby(df1["Variant SKU"].str.split("-").str[0])["Body HTML"]
+            df_all[df_all["Body HTML"].notna()]
+            .groupby(df_all["Variant SKU"].str.split("-").str[0])["Body HTML"]
             .first()
             .to_dict()
         )
@@ -131,9 +132,9 @@ def main():
             if pd.isna(search_string):  # Check if it's NaN
                 search_string = ""  # If NaN, skip or use an empty string for search
 
-            # Step 3: Search for this string in df2
-            match = df2[
-                df2["Image Src"].str.contains(
+            # Step 3: Search for this string in the image url data frame 
+            match = df_images[
+                df_images["Image Src"].str.contains(
                     r"\b" + re.escape(str(search_string)) + r"\b", na=False, regex=True
                 )
             ]
@@ -174,21 +175,27 @@ def main():
         print(f"Total execution time: {int(minutes)} minutes {seconds:.2f} seconds.")
 
     # LOAD THE EXCEL FILES
-    # img url excel file. needs a column called "Image Src" with urls. Get report from shopify
-    df2 = pd.read_excel("excel-files/urls.xlsx")
-    # Read the products file from shopify
-    df1 = pd.read_excel("excel-files/products.xlsx")
+    
+    # Read the single export file from shopify matrixify
+    # Get all matching files
+    files = glob.glob(os.path.join( "excel-files", "Export_*.xlsx"))
+    # define df_all in the top level  main func 
+    df_all = None
+    # Find the most recently created file
+    if files:
+        latest_file = max(files, key=os.path.getctime)
+        print("Most recent file:", latest_file)
+    else:
+        print("No matching files found.")
 
-    # smaller DF for testing purposes
-    df1_test = df1.sample(
-        n=200,
-        # random_state=42
-    )  # n=15 specifies the number of rows to select, random_state is optional for reproducibility
+    df_all = pd.read_excel(latest_file)
+    df_all_first1000 = df_all.head(1000)
 
-    df1_first200 = df1.head(200)
+    # Create a URL df
+    df_images = df_all[["Image Src"]].drop_duplicates().reset_index(drop=True)
 
     # call the main function
-    process_data(df1_first200)
+    process_data(df_all_first1000)
 
 
 # Run the main function with cProfile
