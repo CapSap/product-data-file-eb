@@ -32,3 +32,6 @@ todos or a plan:
 - urls have correct info only within the url itself. and the parent ID will match the product.
     - i thought i was using the "image alt text" column from shopify, but i am making my own by removing the size from the sku.
     
+stopping at this problem:
+- still having problems here. csv file is showing a 0.0 in the int column. it needs to be whole number
+- also having trouble with staple tee 5001-WHT. The image url name is not formatted correctly
