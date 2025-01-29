@@ -1,10 +1,10 @@
+import os
 import cProfile
 import re
 import time
 import numpy as np
 import pandas as pd
 from tqdm import tqdm
-import os
 
 
 def main():
@@ -22,23 +22,29 @@ def main():
 
     # function to create parent rows
     def create_parent_rows(df):
-        parent_rows = df.groupby(df['Variant SKU'].apply(get_sku_wo_size)).agg({
-            'Option1 Value': 'first',
-            'Title': 'first',
-            'Vendor': 'first',
-            'Body HTML': 'first',
-            'image_alt': 'first'
-        }).reset_index()
+        parent_rows = (
+            df.groupby(df["Variant SKU"].apply(get_sku_wo_size))
+            .agg(
+                {
+                    "Option1 Value": "first",
+                    "Title": "first",
+                    "Vendor": "first",
+                    "Body HTML": "first",
+                    "image_alt": "first",
+                }
+            )
+            .reset_index()
+        )
 
-        parent_rows.rename(columns={'index': 'Variant SKU'}, inplace=True)
-        parent_rows['Option2 Value'] = None
-        parent_rows['Variant Inventory Item ID'] = None
-        parent_rows['Variant ID'] = None
-        parent_rows['Variant Weight'] = None
-        parent_rows['Variant Price'] = None
+        parent_rows.rename(columns={"index": "Variant SKU"}, inplace=True)
+        parent_rows["Option2 Value"] = None
+        parent_rows["Variant Inventory Item ID"] = None
+        parent_rows["Variant ID"] = None
+        parent_rows["Variant Weight"] = None
+        parent_rows["Variant Price"] = None
 
         # identify url column names
-        url_columns = [col for col in df.columns if col.startswith('url_')]
+        url_columns = [col for col in df.columns if col.startswith("url_")]
 
         # Initialize URL columns in parent_rows with an empty value
         for col in url_columns:
@@ -46,9 +52,8 @@ def main():
 
         # Copy URL columns from the first matching child
         for idx, parent_row in parent_rows.iterrows():
-            sku_prefix = get_sku_wo_size(parent_row['Variant SKU'])
-            matching_rows = df[df['Variant SKU'].apply(
-                get_sku_wo_size) == sku_prefix]
+            sku_prefix = get_sku_wo_size(parent_row["Variant SKU"])
+            matching_rows = df[df["Variant SKU"].apply(get_sku_wo_size) == sku_prefix]
             if not matching_rows.empty:
                 for col in url_columns:
                     if col in matching_rows.columns:
@@ -70,31 +75,51 @@ def main():
         df_cleaned = df_input.dropna(subset=["Variant SKU"])
 
         # clean and remove unwanted columns from the product file
-        columns_to_exclude = ['Variant Inventory Qty',	'Custom Collections', 'Smart Collections', ' Variant Inventory Item ID',	'Variant ID',	'Variant Command',	'Option1 Name',	'Option2 Name', 'Option3 Name',	'Option3 Value'	'Variant Position',
-                              'Variant Image', 'Variant Compare At Price', 	'Variant Taxable', 'Variant Tax Code',	'Variant Inventory Tracker',	'Variant Inventory Policy',	'Variant Fulfillment Service',	'Variant Requires Shipping',	'Variant Inventory Adjust']
+        columns_to_exclude = [
+            "Variant Inventory Qty",
+            "Custom Collections",
+            "Smart Collections",
+            "Variant Inventory Item ID",
+            "Variant ID",
+            "Variant Command",
+            "Option1 Name",
+            "Option2 Name",
+            "Option3 Name",
+            "Option3 Value" "Variant Position",
+            "Variant Image",
+            "Variant Compare At Price",
+            "Variant Taxable",
+            "Variant Tax Code",
+            "Variant Inventory Tracker",
+            "Variant Inventory Policy",
+            "Variant Fulfillment Service",
+            "Variant Requires Shipping",
+            "Variant Inventory Adjust",
+        ]
 
-        df_cleaned = df_cleaned.drop(
-            columns=columns_to_exclude, errors='ignore')
+        df_cleaned = df_cleaned.drop(columns=columns_to_exclude, errors="ignore")
 
         # Optionally, reset the index after dropping rows
         df_cleaned = df_cleaned.reset_index(drop=True)
 
-       # HTML Description Matching Logic
+        # HTML Description Matching Logic
 
-       # create a dictionary that is { first sku word : html body }
-        html_map = df1[df1['Body HTML'].notna()].groupby(
-            df1['Variant SKU'].str.split('-').str[0]
-        )['Body HTML'].first().to_dict()
+        # create a dictionary that is { first sku word : html body }
+        html_map = (
+            df1[df1["Body HTML"].notna()]
+            .groupby(df1["Variant SKU"].str.split("-").str[0])["Body HTML"]
+            .first()
+            .to_dict()
+        )
 
         # this func accepts a row, and matches it with the dictionary { first sku word : html body }
         # if nothing is found in the map, return the html body that already exists on the row
         def find_html_description(row):
-            sku_prefix = row['Variant SKU'].split('-')[0]
-            return html_map.get(sku_prefix, row['Body HTML'])
+            sku_prefix = row["Variant SKU"].split("-")[0]
+            return html_map.get(sku_prefix, row["Body HTML"])
 
         # Apply the HTML matching function to each row in the df
-        df_cleaned['Body HTML'] = df_cleaned.apply(
-            find_html_description, axis=1)
+        df_cleaned["Body HTML"] = df_cleaned.apply(find_html_description, axis=1)
 
         # Step 2: Function to process each row and match
 
@@ -107,8 +132,11 @@ def main():
                 search_string = ""  # If NaN, skip or use an empty string for search
 
             # Step 3: Search for this string in df2
-            match = df2[df2["Image Src"].str.contains(
-                r"\b" + re.escape(str(search_string)) + r"\b", na=False, regex=True)]
+            match = df2[
+                df2["Image Src"].str.contains(
+                    r"\b" + re.escape(str(search_string)) + r"\b", na=False, regex=True
+                )
+            ]
 
             # Step 4: If matches are found, append them to the row in separate columns
             if not match.empty:
@@ -119,15 +147,17 @@ def main():
                     df_cleaned.at[index, column_name] = value
 
         # Apply the function to each row with tqdm progress bar
-        df_cleaned.progress_apply(
-            lambda row: process_row(row.name, row), axis=1)
+        df_cleaned.progress_apply(lambda row: process_row(row.name, row), axis=1)
         print(df_cleaned)
 
         # Create parent rows and merge with cleaned data
         parent_rows = create_parent_rows(df_cleaned)
         print(parent_rows)
-        final_df = pd.concat([df_cleaned, parent_rows], ignore_index=True).drop_duplicates(
-            subset=['Variant SKU'], keep='first').sort_values(by='Variant SKU')
+        final_df = (
+            pd.concat([df_cleaned, parent_rows], ignore_index=True)
+            .drop_duplicates(subset=["Variant SKU"], keep="first")
+            .sort_values(by="Variant SKU")
+        )
 
         # Get current date and time formatted as 'YYYY-MM-DD_HH-MM-SS'
         timestamp = time.strftime("%H-%M%p on %A %B %dth")
@@ -140,9 +170,8 @@ def main():
         # Calculate the elapsed time and display it
         elapsed_time = time.time() - start_time
         minutes = elapsed_time // 60  # Get the integer part of minutes
-        seconds = elapsed_time % 60   # Get the remaining seconds
-        print(f"Total execution time: {
-              int(minutes)} minutes {seconds:.2f} seconds.")
+        seconds = elapsed_time % 60  # Get the remaining seconds
+        print(f"Total execution time: {int(minutes)} minutes {seconds:.2f} seconds.")
 
     # LOAD THE EXCEL FILES
     # img url excel file. needs a column called "Image Src" with urls. Get report from shopify
@@ -165,4 +194,4 @@ def main():
 # Run the main function with cProfile
 if __name__ == "__main__":
 
-    cProfile.run('main()', 'profile_output.prof')
+    cProfile.run("main()", "profile_output.prof")
