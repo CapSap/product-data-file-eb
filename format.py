@@ -226,8 +226,8 @@ def main():
         )
 
         # Convert ID and Variant Barcode to string format
-        final_df["ID"] = final_df["ID"].astype(int)
-        final_df["Variant Barcode"] = final_df["Variant Barcode"].astype(int)
+        # final_df["ID"] = final_df["ID"].astype(int)
+        # final_df["Variant Barcode"] = final_df["Variant Barcode"].astype(int)
 
         # Ensure Excel treats them as text by specifying dtype
         with pd.ExcelWriter(
@@ -261,7 +261,6 @@ def main():
         )
 
     # LOAD THE EXCEL FILES
-
     # Read the single export file from shopify matrixify
     # Get all matching files
     files = glob.glob(os.path.join("excel-files", "Export_*.xlsx"))
