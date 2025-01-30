@@ -9,17 +9,44 @@ from tqdm import tqdm
 
 
 def main():
+    # set for the get wo size function
+    KNOWN_SIZES = {
+        "XS",
+        "S",
+        "M",
+        "L",
+        "XL",
+        "2XL",
+        "3XL",
+        "4XL",
+        "5XL",
+        "6XL",
+        "7XL",
+        "35",
+        "36",
+        "37",
+        "38",
+        "39",
+        "40",
+        "41",
+        "42",
+        "43",
+        "44",
+        "45",
+        "46",
+        "47",
+        "48",
+    }
+
     # Function to remove size from sku
     def get_sku_wo_size(sku):
-        # This will match formats like 'asd123-asd123'
-        valid_format = r"^[\w]+-[\w]+$"
         sku = str(sku)  # Ensure it's a string
-        # If SKU is already in valid format (exactly two words separated by one dash), keep it as is
-        if re.match(valid_format, sku):
-            return sku
-        else:
-            # Otherwise, remove the last part after the last dash
-            return re.sub(r"-\w+$", "", sku)
+        parts = sku.split("-")
+
+        if len(parts) >= 2 and parts[-1] in KNOWN_SIZES:
+            return "-".join(parts[:-1])  # Remove the last part if it's a known size
+
+        return sku  # Keep everything if no size is detected
 
     # function to create parent rows
     def create_parent_rows(df):
@@ -254,7 +281,7 @@ def main():
     df_images = df_all[["Image Src"]].drop_duplicates().dropna().reset_index(drop=True)
 
     # call the main function
-    process_data(df_all_first1000)
+    process_data(df_all)
 
 
 # Run the main function with cProfile
