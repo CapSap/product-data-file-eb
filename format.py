@@ -74,7 +74,6 @@ def main():
 
         # Remove rows where the column is blank (NaN or empty)
         df_cleaned = df_input.dropna(subset=["Variant SKU"])
-        
 
         # Define the base columns to keep
         columns_to_keep = [
@@ -125,7 +124,7 @@ def main():
             "Variant Inventory Adjust",
         ]
 
-       # df_cleaned = df_cleaned.drop(columns=columns_to_exclude, errors="ignore")
+        # df_cleaned = df_cleaned.drop(columns=columns_to_exclude, errors="ignore")
 
         # Optionally, reset the index after dropping rows
         df_cleaned = df_cleaned.reset_index(drop=True)
@@ -159,7 +158,7 @@ def main():
             if pd.isna(search_string):  # Check if it's NaN
                 search_string = ""  # If NaN, skip or use an empty string for search
 
-            # Step 3: Search for this string in the image url data frame 
+            # Step 3: Search for this string in the image url data frame
             match = df_images[
                 df_images["Image Src"].str.contains(
                     r"\b" + re.escape(str(search_string)) + r"\b", na=False, regex=True
@@ -195,26 +194,32 @@ def main():
         output_filename_csv = f"product_data_{timestamp}.csv"
 
         # Save to CSV
-        final_df.to_csv(os.path.join("output", output_filename_csv ), index=False, quoting=1)
+        final_df.to_csv(
+            os.path.join("output", output_filename_csv), index=False, quoting=1
+        )
 
         # Convert ID and Variant Barcode to string format
         final_df["ID"] = final_df["ID"].astype(int)
         final_df["Variant Barcode"] = final_df["Variant Barcode"].astype(int)
 
         # Ensure Excel treats them as text by specifying dtype
-        with pd.ExcelWriter(os.path.join("output", output_filename_xlsx ), engine="xlsxwriter") as writer:
+        with pd.ExcelWriter(
+            os.path.join("output", output_filename_xlsx), engine="xlsxwriter"
+        ) as writer:
             final_df.to_excel(writer, index=False, sheet_name="Sheet1")
-            
+
             # Get the workbook and worksheet objects
             workbook = writer.book
             worksheet = writer.sheets["Sheet1"]
 
             # Define text format
-            text_format = workbook.add_format({"num_format": "@"})  # "@" forces text format in Excel
+            # "@" forces text format in Excel
+            text_format = workbook.add_format({"num_format": "@"})
 
             # Apply text format to specific columns
             worksheet.set_column("A:A", None, text_format)  # Column A (ID)
-            worksheet.set_column("I:I", None, text_format)  # Column I (Variant Barcode)
+            # Column I (Variant Barcode)
+            worksheet.set_column("I:I", None, text_format)
 
         # Display completion message
         print("Script completed successfully!")
@@ -223,14 +228,17 @@ def main():
         elapsed_time = time.time() - start_time
         minutes = elapsed_time // 60  # Get the integer part of minutes
         seconds = elapsed_time % 60  # Get the remaining seconds
-        print(f"Total execution time: {int(minutes)} minutes {seconds:.2f} seconds.")
+        print(
+            f"Total execution time: {
+                int(minutes)} minutes {seconds:.2f} seconds."
+        )
 
     # LOAD THE EXCEL FILES
-    
+
     # Read the single export file from shopify matrixify
     # Get all matching files
-    files = glob.glob(os.path.join( "excel-files", "Export_*.xlsx"))
-    # define df_all in the top level  main func 
+    files = glob.glob(os.path.join("excel-files", "Export_*.xlsx"))
+    # define df_all in the top level  main func
     df_all = None
     # Find the most recently created file
     if files:
