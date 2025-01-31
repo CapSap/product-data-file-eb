@@ -39,6 +39,8 @@ def main():
         "46",
         "47",
         "48",
+        "SM",
+        "LXL"
     }
 
     # Function to remove size from sku
