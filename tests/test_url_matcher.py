@@ -90,3 +90,18 @@ def test_invalid_inputs():
             # If we expect an exception for certain invalid inputs, 
             # we can add assertions here
             pass
+
+def test_case_insensitivity():
+    """Test that matching is case-insensitive"""
+    test_cases = [
+        ("abc123", "ABC123_filename.jpg", True),
+        ("ABC123", "abc123_filename.jpg", True),
+        ("AbC123", "aBc123_filename.jpg", True),
+        ("xyz789", "XYZ789.png", True),
+        ("XYZ789", "xyz789.jpg", True),
+        ("MixEdCaSe", "mixedcase_file.png", True),
+    ]
+    
+    for search_string, url, expected in test_cases:
+        result = match_string_in_url(search_string, url)
+        assert result == expected, f"Failed for search_string: {search_string}, URL: {url}"
