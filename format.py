@@ -7,6 +7,8 @@ import numpy as np
 import pandas as pd
 from tqdm import tqdm
 
+from utils.helpers import match_string_in_url
+
 
 def main():
     """transform excel file into another csv file"""
@@ -266,16 +268,20 @@ def main():
         print("No matching files found.")
 
     df_all = pd.read_excel(latest_file)
-    df_all_first1000 = df_all.head(1000)
+    df_all_first_few = df_all.head(20)
 
     # Create a URL df
     df_images = df_all[["Image Src"]].drop_duplicates().dropna().reset_index(drop=True)
+    # trim extra words
+    df_images["Trimmed Src"] = df_images["Image Src"].str.extract(r"(?:.*?files/){2}(.*)")
+
+    print(df_images)
 
     # call the main function
     process_data(df_all)
 
-
 # Run the main function with cProfile
 if __name__ == "__main__":
+
 
     cProfile.run("main()", "profile_output.prof")
