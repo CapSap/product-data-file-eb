@@ -294,8 +294,6 @@ def main():
         r"(?:.*?files/){2}(.*)"
     )
 
-    print(df_images)
-
     # call the main function
     process_data(df_all)
 
