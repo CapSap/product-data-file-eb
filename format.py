@@ -10,7 +10,7 @@ from tqdm import tqdm
 
 def main():
     # set for the get wo size function
-    KNOWN_SIZES = {
+    KNOWN_SIZES = { # pylint: disable=invalid-name
         "XS",
         "S",
         "M",
