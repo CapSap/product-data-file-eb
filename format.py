@@ -270,6 +270,7 @@ def main():
         print("No matching files found.")
 
     df_all = pd.read_excel(latest_file)
+    df_all = df_all[df_all["Status"].str.lower() != "archived"]  # Filter out archived rows
     df_all_first_few = df_all.head(20)
 
     # Create a URL df
