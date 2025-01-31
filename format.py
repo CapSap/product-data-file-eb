@@ -179,26 +179,20 @@ def main():
         # Step 2: Function to process each row and match
 
         def process_row(index, row):
-            # Access the 'search' column value in df1
-            search_string = row["image_alt"]
+            # Get the search string from image_alt column
+            search_string = str(row["image_alt"]) if not pd.isna(row["image_alt"]) else ""
+            
+            if not search_string:  # Skip empty search strings
+                return
+                
+            # Create a mask for matching rows using our new function
+            mask = df_images["Trimmed Src"].apply(lambda x: match_string_in_url(search_string, str(x)))
+            match = df_images[mask]
 
-            # Ensure search_string is a valid string (convert to string if it's not)
-            if pd.isna(search_string):  # Check if it's NaN
-                search_string = ""  # If NaN, skip or use an empty string for search
-
-            # Step 3: Search for this string in the image url data frame
-            match = df_images[
-                df_images["Image Src"].str.contains(
-                    r"\b" + re.escape(str(search_string)) + r"\b", na=False, regex=True
-                )
-            ]
-
-            # Step 4: If matches are found, append them to the row in separate columns
+            # If matches are found, append them to the row in separate columns
             if not match.empty:
-                # For each match, create a new column dynamically
                 for i, value in enumerate(match["Image Src"].values):
                     column_name = f"url_{i+1}"
-                    # Assign match value to the dynamic column
                     df_cleaned.at[index, column_name] = value
 
         # Apply the function to each row with tqdm progress bar
