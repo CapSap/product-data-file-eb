@@ -269,7 +269,7 @@ def main():
     df_all = None
     # Find the most recently created file
     if files:
-        latest_file = max(files, key=os.path.getctime)
+        latest_file = max(files, key=os.path.getmtime)
         print("Most recent file:", latest_file)
     else:
         print("No matching files found.")
