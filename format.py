@@ -198,7 +198,6 @@ def main():
 
         # Apply the function to each row with tqdm progress bar
         df_cleaned.progress_apply(lambda row: process_row(row.name, row), axis=1)
-        print(df_cleaned)
 
         # Create parent rows and merge with cleaned data
         parent_rows = create_parent_rows(df_cleaned)
