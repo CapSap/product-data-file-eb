@@ -11,7 +11,7 @@ def match_string_in_url(search_string, url):
     # (?=[_-]|$) - Positive lookahead for either a separator or end of string
     """
 
-    pattern = r'(?:^|[_-])({})(?=[_-]|$)'.format(search_string)
+    pattern = r'(?:^|[._-])({})(?=[._-]|$)'.format(re.escape(search_string))
     
     match = re.search(pattern, url)
     return match is not None
