@@ -13,18 +13,13 @@ from utils.helpers import match_string_in_url
 def main():
     """transform excel file into another csv file"""
     # set for the get wo size function
-    KNOWN_SIZES = { # pylint: disable=invalid-name
-        "XS",
-        "S",
-        "M",
-        "L",
-        "XL",
-        "2XL",
-        "3XL",
-        "4XL",
-        "5XL",
-        "6XL",
-        "7XL",
+    KNOWN_SIZES = {  # pylint: disable=invalid-name
+        "0",
+        "26",
+        "28",
+        "30",
+        "32",
+        "34",
         "35",
         "36",
         "37",
@@ -39,8 +34,21 @@ def main():
         "46",
         "47",
         "48",
+        "50",
+        "52",
+        "2XL",
+        "3XL",
+        "4XL",
+        "5XL",
+        "6XL",
+        "7XL",
+        "L",
+        "LXL",
+        "M",
+        "S",
         "SM",
-        "LXL"
+        "XL",
+        "XS",
     }
 
     # Function to remove size from sku
@@ -184,13 +192,17 @@ def main():
 
         def process_row(index, row):
             # Get the search string from image_alt column
-            search_string = str(row["image_alt"]) if not pd.isna(row["image_alt"]) else ""
-            
+            search_string = (
+                str(row["image_alt"]) if not pd.isna(row["image_alt"]) else ""
+            )
+
             if not search_string:  # Skip empty search strings
                 return
-                
+
             # Create a mask for matching rows using our new function
-            mask = df_images["Trimmed Src"].apply(lambda x: match_string_in_url(search_string, str(x)))
+            mask = df_images["Trimmed Src"].apply(
+                lambda x: match_string_in_url(search_string, str(x))
+            )
             match = df_images[mask]
 
             # If matches are found, append them to the row in separate columns
@@ -270,21 +282,25 @@ def main():
         print("No matching files found.")
 
     df_all = pd.read_excel(latest_file)
-    df_all = df_all[df_all["Status"].str.lower() != "archived"]  # Filter out archived rows
+    df_all = df_all[
+        df_all["Status"].str.lower() != "archived"
+    ]  # Filter out archived rows
     df_all_first_few = df_all.head(20)
 
     # Create a URL df
     df_images = df_all[["Image Src"]].drop_duplicates().dropna().reset_index(drop=True)
     # trim extra words
-    df_images["Trimmed Src"] = df_images["Image Src"].str.extract(r"(?:.*?files/){2}(.*)")
+    df_images["Trimmed Src"] = df_images["Image Src"].str.extract(
+        r"(?:.*?files/){2}(.*)"
+    )
 
     print(df_images)
 
     # call the main function
     process_data(df_all)
 
+
 # Run the main function with cProfile
 if __name__ == "__main__":
-
 
     cProfile.run("main()", "profile_output.prof")
