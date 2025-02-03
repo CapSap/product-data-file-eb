@@ -115,12 +115,20 @@ def main():
         # main function
 
     def process_data(df_input):
+        print("Starting data processing...")
+
         start_time = time.time()
         # Enable tqdm for pandas apply
         tqdm.pandas()
 
         # add in the sku without size as image_alt
-        df_input["image_alt"] = df_input["Variant SKU"].apply(get_sku_wo_size)
+        print("  Processing SKUs...")
+        df_input["image_alt"] = tqdm(
+            df_input["Variant SKU"].apply(get_sku_wo_size),
+            total=len(df_input),
+            desc="  Generating image_alt",
+        )
+        print("  Done!")
 
         # Remove rows where the column is blank (NaN or empty)
         df_cleaned = df_input.dropna(subset=["Variant SKU"])
@@ -155,7 +163,7 @@ def main():
         df_cleaned = df_cleaned.reset_index(drop=True)
 
         # HTML Description Matching Logic
-
+        print("\nMatching HTML descriptions...")
         # create a dictionary that is { first sku word : html body }
         html_map = (
             df_all[df_all["Body HTML"].notna()]
@@ -171,8 +179,10 @@ def main():
             return html_map.get(sku_prefix, row["Body HTML"])
 
         # Apply the HTML matching function to each row in the df
-        df_cleaned["Body HTML"] = df_cleaned.apply(find_html_description, axis=1)
-
+        # df_cleaned["Body HTML"] = df_cleaned.apply(find_html_description, axis=1)
+        df_cleaned["Body HTML"] = df_cleaned.progress_apply(
+            find_html_description, axis=1
+        )
         # Step 2: Function to process each row and match
 
         def process_row(index, row):
@@ -197,51 +207,59 @@ def main():
                     df_cleaned.at[index, column_name] = value
 
         # Apply the function to each row with tqdm progress bar
-        df_cleaned.progress_apply(lambda row: process_row(row.name, row), axis=1)
+        print("\nMatching images...")
+        with tqdm(total=len(df_cleaned), desc="  Processing image matches") as pbar:
+            for index, row in df_cleaned.iterrows():
+                process_row(index, row)
+                pbar.update(1)
+        print("  Done!")
 
         # Create parent rows and merge with cleaned data
+        print("\nCreating parent rows...")
         parent_rows = create_parent_rows(df_cleaned)
-        print(parent_rows)
-        final_df = (
-            pd.concat([df_cleaned, parent_rows], ignore_index=True)
-            .drop_duplicates(subset=["Variant SKU"], keep="first")
-            .sort_values(by="Variant SKU")
-        )
+        print("  Done!")
 
-        # Get current date and time formatted as 'YYYY-MM-DD_HH-MM-SS'
-        timestamp = time.strftime("%H-%M%p on %A %B %dth")
-        output_filename = f"product data file created at {timestamp}"
+        print("\nFinalizing data...")
+        with tqdm(total=3, desc="Saving files") as pbar:
+            final_df = (
+                pd.concat([df_cleaned, parent_rows], ignore_index=True)
+                .drop_duplicates(subset=["Variant SKU"], keep="first")
+                .sort_values(by="Variant SKU")
+            )
+            pbar.update(1)
 
-        output_filename_xlsx = f"product_data_{timestamp}.xlsx"
-        output_filename_csv = f"product_data_{timestamp}.csv"
+            # Get current date and time formatted as 'YYYY-MM-DD_HH-MM-SS'
+            timestamp = time.strftime("%H-%M%p on %A %B %dth")
 
-        # Save to CSV
-        final_df.to_csv(
-            os.path.join("output", output_filename_csv), index=False, quoting=1
-        )
+            # Save to CSV
+            timestamp = time.strftime("%H-%M%p on %A %B %dth")
+            final_df.to_csv(
+                os.path.join("output", f"product_data_{timestamp}.csv"),
+                index=False,
+                quoting=1,
+            )
+            pbar.update(1)
 
-        # Convert ID and Variant Barcode to string format
-        # final_df["ID"] = final_df["ID"].astype(int)
-        # final_df["Variant Barcode"] = final_df["Variant Barcode"].astype(int)
+            # Save to Excel
+            with pd.ExcelWriter(
+                os.path.join("output", f"product_data_{timestamp}.xlsx"),
+                engine="xlsxwriter",
+            ) as writer:
+                final_df.to_excel(writer, index=False, sheet_name="Sheet1")
+                # [Excel formatting code remains the same]
+                # Get the workbook and worksheet objects
+                workbook = writer.book
+                worksheet = writer.sheets["Sheet1"]
 
-        # Ensure Excel treats them as text by specifying dtype
-        with pd.ExcelWriter(
-            os.path.join("output", output_filename_xlsx), engine="xlsxwriter"
-        ) as writer:
-            final_df.to_excel(writer, index=False, sheet_name="Sheet1")
+                # Define text format
+                # "@" forces text format in Excel
+                text_format = workbook.add_format({"num_format": "@"})
 
-            # Get the workbook and worksheet objects
-            workbook = writer.book
-            worksheet = writer.sheets["Sheet1"]
-
-            # Define text format
-            # "@" forces text format in Excel
-            text_format = workbook.add_format({"num_format": "@"})
-
-            # Apply text format to specific columns
-            worksheet.set_column("A:A", None, text_format)  # Column A (ID)
-            # Column I (Variant Barcode)
-            worksheet.set_column("I:I", None, text_format)
+                # Apply text format to specific columns
+                worksheet.set_column("A:A", None, text_format)  # Column A (ID)
+                # Column I (Variant Barcode)
+                worksheet.set_column("I:I", None, text_format)
+            pbar.update(1)
 
         # Display completion message
         print("Script completed successfully!")
@@ -253,6 +271,7 @@ def main():
         print(f"Total execution time: {int(minutes)} minutes {seconds:.2f} seconds.")
 
     # LOAD THE EXCEL FILES
+    print("Loading Excel files...")
     # Read the single export file from shopify matrixify
     # Get all matching files
     files = glob.glob(os.path.join("excel-files", "Export_*.xlsx"))
@@ -261,9 +280,9 @@ def main():
     # Find the most recently created file
     if files:
         latest_file = max(files, key=os.path.getmtime)
-        print("Most recent file:", latest_file)
+        print("  Most recent file:", latest_file)
     else:
-        print("No matching files found.")
+        print("  No matching files found.")
 
     df_all = pd.read_excel(latest_file)
     df_all = df_all[
@@ -272,11 +291,14 @@ def main():
     df_all_first_few = df_all.head(20)
 
     # Create a URL df
+    print("\nProcessing image URLs and creating data frame...")
     df_images = df_all[["Image Src"]].drop_duplicates().dropna().reset_index(drop=True)
     # trim extra words
     df_images["Trimmed Src"] = df_images["Image Src"].str.extract(
         r"(?:.*?files/){2}(.*)"
     )
+
+    print("  Done!")
 
     # call the main function
     process_data(df_all)
