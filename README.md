@@ -21,17 +21,22 @@ ive got a new idea about the images:
 - i could create a new dictionary that takes in the partent ID, and colour, and an image url
 - and match this against a varient sku where the parent id matches, and the colour matches.
 
-
-
 todos or a plan:
- - we are reading the single export file
- - instead of blacklist columns, whitelist them to only include desired.
- - and build a better dictionary for the url maapping. i can use the ID column and colour to help match
-    - so ill have a dic of ID, colour, url
-    - and when we go through each row, find all urls where the ID and colour match?
+
+- we are reading the single export file
+- instead of blacklist columns, whitelist them to only include desired.
+- and build a better dictionary for the url maapping. i can use the ID column and colour to help match
+  - so ill have a dic of ID, colour, url
+  - and when we go through each row, find all urls where the ID and colour match?
 - urls have correct info only within the url itself. and the parent ID will match the product.
-    - i thought i was using the "image alt text" column from shopify, but i am making my own by removing the size from the sku.
-    
+  - i thought i was using the "image alt text" column from shopify, but i am making my own by removing the size from the sku.
+
 stopping at this problem:
+
 - still having problems here. csv file is showing a 0.0 in the int column. it needs to be whole number
 - also having trouble with staple tee 5001-WHT. The image url name is not formatted correctly
+
+# how to run the tests
+
+after sourcing the local env:
+run `pytest tests/(TEST FILENAME)`
