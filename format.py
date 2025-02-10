@@ -295,10 +295,6 @@ def main():
     df_images = (
         df_all[["ID", "Image Src"]].drop_duplicates().dropna().reset_index(drop=True)
     )
-    # trim extra words
-    df_images["Trimmed Src"] = df_images["Image Src"].str.extract(
-        r"(?:.*?files/){2}(.*)"
-    )
 
     print("  Done!")
 
