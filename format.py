@@ -292,7 +292,9 @@ def main():
 
     # Create a URL df
     print("\nProcessing image URLs and creating data frame...")
-    df_images = df_all[["Image Src"]].drop_duplicates().dropna().reset_index(drop=True)
+    df_images = (
+        df_all[["ID", "Image Src"]].drop_duplicates().dropna().reset_index(drop=True)
+    )
     # trim extra words
     df_images["Trimmed Src"] = df_images["Image Src"].str.extract(
         r"(?:.*?files/){2}(.*)"
