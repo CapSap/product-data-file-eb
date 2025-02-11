@@ -57,6 +57,7 @@ def main():
         "S",
         "SM",
         "XL",
+        "XXL",
         "XS",
         "XXS",
     }
