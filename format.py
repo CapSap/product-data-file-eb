@@ -288,12 +288,16 @@ def main():
     df_all = df_all[
         df_all["Status"].str.lower() != "archived"
     ]  # Filter out archived rows
-    df_all_first_few = df_all.head(20)
+    df_all_first_few = df_all.head(1000)
 
     # Create a URL df
     print("\nProcessing image URLs and creating data frame...")
     df_images = (
         df_all[["ID", "Image Src"]].drop_duplicates().dropna().reset_index(drop=True)
+    )
+    # trim extra words
+    df_images["Trimmed Src"] = df_images["Image Src"].str.extract(
+        r"https://cdn\.shopify\.com/s/files/1/0799/3953/5165/[^/]+/(.*)"
     )
 
     print("  Done!")
