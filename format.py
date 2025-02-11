@@ -187,6 +187,7 @@ def main():
 
         def process_row(index, row):
             # Get the search string from image_alt column
+            parent_id = row["ID"]
             search_string = (
                 str(row["image_alt"]) if not pd.isna(row["image_alt"]) else ""
             )
@@ -194,12 +195,22 @@ def main():
             if not search_string:  # Skip empty search strings
                 return
 
-            # Create a mask for matching rows using our new function
-            mask = df_images["Trimmed Src"].apply(
-                lambda x: match_string_in_url(search_string, str(x))
-            )
-            match = df_images[mask]
+            filtered_images = df_images[df_images["ID"] == parent_id]
 
+            if not filtered_images.empty:
+
+                # Create a mask for matching rows using our new function
+                mask = filtered_images["Trimmed Src"].apply(
+                    lambda x: match_string_in_url(search_string, str(x))
+                )
+                match = filtered_images[mask]
+            else:
+                # add a log to display when the ID search fails
+                print(f"Fallback triggered for SKU: {search_string} (ID: {parent_id})")
+                mask = df_images["Trimmed Src"].apply(
+                    lambda x: match_string_in_url(search_string, str(x))
+                )
+                match = df_images[mask]
             # If matches are found, append them to the row in separate columns
             if not match.empty:
                 for i, value in enumerate(match["Image Src"].values):
