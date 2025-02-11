@@ -18,6 +18,8 @@ env/
 # excel-files/*
 output/*.xlsx
 *.xlsx
+*.xlsx#
+*.csv
 
 # profile 
 *.prof
