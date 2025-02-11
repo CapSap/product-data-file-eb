@@ -270,6 +270,19 @@ def main():
                 worksheet.set_column("A:A", None, text_format)  # Column A (ID)
                 # Column I (Variant Barcode)
                 worksheet.set_column("I:I", None, text_format)
+
+                # Apply text format to all URL columns
+                url_columns = [
+                    col for col in final_df.columns if col.startswith("url_")
+                ]
+                for col in url_columns:
+                    col_idx = final_df.columns.get_loc(col)
+                    excel_col_letter = chr(
+                        65 + col_idx
+                    )  # Convert column index to Excel letter (A, B, C, ...)
+                    worksheet.set_column(
+                        f"{excel_col_letter}:{excel_col_letter}", None, text_format
+                    )
             pbar.update(1)
 
         # Display completion message
@@ -297,7 +310,7 @@ def main():
 
     df_all = pd.read_excel(latest_file)
     df_all = df_all[
-        df_all["Status"].str.lower() != "archived" & df_all["Published"] != False
+        (df_all["Status"].str.lower() != "archived") & (df_all["Published"] != False)
     ]  # Filter out archived rows
     df_all_first_few = df_all.head(1000)
 
