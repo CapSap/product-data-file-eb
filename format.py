@@ -136,6 +136,7 @@ def main():
 
         # Define the base columns to keep
         columns_to_keep = [
+            "Variant SKU",
             "ID",
             "Title",
             "Body HTML",
@@ -143,7 +144,6 @@ def main():
             "Variant Inventory Item ID",
             "Option1 Value",
             "Option2 Value",
-            "Variant SKU",
             "Variant Barcode",
             "Variant Weight",
             "Variant Weight Unit",
