@@ -91,7 +91,6 @@ def main():
         parent_rows.rename(columns={"index": "Variant SKU"}, inplace=True)
         parent_rows["Option2 Value"] = None
         parent_rows["Variant Inventory Item ID"] = None
-        parent_rows["Variant ID"] = None
         parent_rows["Variant Weight"] = None
         parent_rows["Variant Price"] = None
 
@@ -293,9 +292,21 @@ def main():
                     excel_col_letter = chr(
                         65 + col_idx
                     )  # Convert column index to Excel letter (A, B, C, ...)
+
+                    # Write the URLs as text (prefix with a single quote)
                     worksheet.set_column(
                         f"{excel_col_letter}:{excel_col_letter}", None, text_format
                     )
+                    for row_idx in range(
+                        1, len(final_df) + 1
+                    ):  # Start from row 1 to avoid the header
+                        worksheet.write(
+                            row_idx,
+                            col_idx,
+                            f"'{str(final_df.at[row_idx-1, col])}",
+                            text_format,
+                        )
+
             pbar.update(1)
 
         # Display completion message
