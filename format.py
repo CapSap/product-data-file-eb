@@ -141,7 +141,6 @@ def main():
             "Title",
             "Body HTML",
             "Vendor",
-            "Variant Inventory Item ID",
             "Option1 Value",
             "Option2 Value",
             "Variant Barcode",
