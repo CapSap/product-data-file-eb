@@ -238,6 +238,18 @@ def main():
                 .drop_duplicates(subset=["Variant SKU"], keep="first")
                 .sort_values(by="Variant SKU")
             )
+            # Rename columns
+            final_df.rename(
+                columns={
+                    "Vendor": "Brand",
+                    "Body HTML": "Description (HTML)",
+                    "Option1 Value": "Colour",
+                    "Option2 Value": "Size",
+                    "Variant Price": "RRP Price",
+                    "Variant SKU": "Product SKU",
+                },
+                inplace=True,
+            )
             pbar.update(1)
 
             # Get current date and time formatted as 'YYYY-MM-DD_HH-MM-SS'
