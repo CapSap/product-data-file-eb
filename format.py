@@ -236,6 +236,7 @@ def main():
                 pd.concat([df_cleaned, parent_rows], ignore_index=True)
                 .drop_duplicates(subset=["Variant SKU"], keep="first")
                 .sort_values(by="Variant SKU")
+                .drop(columns=["image_alt", "ID"])
             )
             # Rename columns
             final_df.rename(
