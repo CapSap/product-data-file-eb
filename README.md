@@ -50,3 +50,8 @@ stopping at this problem:
    ![alt text](image-1.png)
 
 6. sit back and wait! the file will get created in the projects/product-data-file-eb/output folder
+
+## Updating the data
+
+1. get a matrify export from shopify. Make sure you have product, variant and image info
+2. dump the excel into the /excel-files folder
