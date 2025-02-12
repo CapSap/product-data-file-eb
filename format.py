@@ -287,6 +287,7 @@ def main():
                 url_columns = [
                     col for col in final_df.columns if col.startswith("url_")
                 ]
+
                 for col in url_columns:
                     col_idx = final_df.columns.get_loc(col)
                     excel_col_letter = chr(
@@ -297,13 +298,20 @@ def main():
                     worksheet.set_column(
                         f"{excel_col_letter}:{excel_col_letter}", None, text_format
                     )
+
                     for row_idx in range(
-                        1, len(final_df) + 1
-                    ):  # Start from row 1 to avoid the header
+                        len(final_df)
+                    ):  # Start from 0 as the row index in DataFrame is zero-based
+                        cell_value = final_df.iloc[row_idx][col]
+                        if pd.isna(cell_value):
+                            cell_value = ""  # Replace NaN with an empty string
+                        else:
+                            cell_value = f"'{str(cell_value)}"  # Keep the existing prefix for URLs
+
                         worksheet.write(
-                            row_idx,
+                            row_idx + 1,  # row_idx + 1 for 1-based Excel row indexing
                             col_idx,
-                            f"'{str(final_df.at[row_idx-1, col])}",
+                            cell_value,
                             text_format,
                         )
 
