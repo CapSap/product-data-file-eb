@@ -90,7 +90,6 @@ def main():
 
         parent_rows.rename(columns={"index": "Variant SKU"}, inplace=True)
         parent_rows["Option2 Value"] = None
-        parent_rows["Variant Inventory Item ID"] = None
         parent_rows["Variant Weight"] = None
         parent_rows["Variant Price"] = None
 
