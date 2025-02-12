@@ -90,8 +90,6 @@ def main():
 
         parent_rows.rename(columns={"index": "Variant SKU"}, inplace=True)
         parent_rows["Option2 Value"] = None
-        parent_rows["Variant Inventory Item ID"] = None
-        parent_rows["Variant ID"] = None
         parent_rows["Variant Weight"] = None
         parent_rows["Variant Price"] = None
 
@@ -136,14 +134,13 @@ def main():
 
         # Define the base columns to keep
         columns_to_keep = [
+            "Variant SKU",
             "ID",
             "Title",
             "Body HTML",
             "Vendor",
-            "Variant Inventory Item ID",
             "Option1 Value",
             "Option2 Value",
-            "Variant SKU",
             "Variant Barcode",
             "Variant Weight",
             "Variant Weight Unit",
@@ -237,6 +234,19 @@ def main():
                 pd.concat([df_cleaned, parent_rows], ignore_index=True)
                 .drop_duplicates(subset=["Variant SKU"], keep="first")
                 .sort_values(by="Variant SKU")
+                .drop(columns=["image_alt", "ID"])
+            )
+            # Rename columns
+            final_df.rename(
+                columns={
+                    "Vendor": "Brand",
+                    "Body HTML": "Description (HTML)",
+                    "Option1 Value": "Colour",
+                    "Option2 Value": "Size",
+                    "Variant Price": "RRP Price",
+                    "Variant SKU": "Product SKU",
+                },
+                inplace=True,
             )
             pbar.update(1)
 
@@ -276,14 +286,34 @@ def main():
                 url_columns = [
                     col for col in final_df.columns if col.startswith("url_")
                 ]
+
                 for col in url_columns:
                     col_idx = final_df.columns.get_loc(col)
                     excel_col_letter = chr(
                         65 + col_idx
                     )  # Convert column index to Excel letter (A, B, C, ...)
+
+                    # Write the URLs as text (prefix with a single quote)
                     worksheet.set_column(
                         f"{excel_col_letter}:{excel_col_letter}", None, text_format
                     )
+
+                    for row_idx in range(
+                        len(final_df)
+                    ):  # Start from 0 as the row index in DataFrame is zero-based
+                        cell_value = final_df.iloc[row_idx][col]
+                        if pd.isna(cell_value):
+                            cell_value = ""  # Replace NaN with an empty string
+                        else:
+                            cell_value = f"'{str(cell_value)}"  # Keep the existing prefix for URLs
+
+                        worksheet.write(
+                            row_idx + 1,  # row_idx + 1 for 1-based Excel row indexing
+                            col_idx,
+                            cell_value,
+                            text_format,
+                        )
+
             pbar.update(1)
 
         # Display completion message
