@@ -369,7 +369,7 @@ def main():
     print("  Done!")
 
     # call the main function
-    process_data(df_all_first_few, args)
+    process_data(df_all, args)
 
 
 # Run the main function with cProfile
