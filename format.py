@@ -377,7 +377,7 @@ def main():
     # call the main function
     process_data(df_all, args)
 
-    # Run the main function with cProfile
-    # if __name__ == "__main__":
 
+# Run the main function with cProfile
+if __name__ == "__main__":
     cProfile.run("main()", "profile_output.prof")
