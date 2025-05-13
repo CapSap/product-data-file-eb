@@ -352,12 +352,16 @@ def main():
     else:
         print("  No matching files found.")
 
+    print("Reading excel file...")
     df_all = pd.read_excel(latest_file)
+    print("  Done!")
+    print("Creating data frame...")
     df_all = df_all[
         (df_all["Status"].str.lower() != "archived") & (df_all["Published"] != False)
     ]  # Filter out archived rows
     df_all_first_few = df_all.head(1000)
 
+    print("  Done!")
     # Create a URL df
     print("\nProcessing image URLs and creating data frame...")
     df_images = (
@@ -373,8 +377,7 @@ def main():
     # call the main function
     process_data(df_all, args)
 
-
-# Run the main function with cProfile
-if __name__ == "__main__":
+    # Run the main function with cProfile
+    # if __name__ == "__main__":
 
     cProfile.run("main()", "profile_output.prof")
