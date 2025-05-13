@@ -29,6 +29,7 @@ Finding the right image url is dependant on the image name being correct for the
    ![alt text](image.png)
 
 5. type `python format.py` and enter again
+There is an optional "--no-html" argument that can be passed to generate a file that does not contain html tags
 
    ![alt text](image-1.png)
 

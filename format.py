@@ -6,11 +6,21 @@ import time
 import numpy as np
 import pandas as pd
 from tqdm import tqdm
+import argparse
 
 from utils.helpers import match_string_in_url
 
 
 def main():
+    parser = argparse.ArgumentParser(
+        description="Create a product data file for distribution to EB customers, including url link to images"
+    )
+    parser.add_argument(
+        "--no-html",
+        action="store_true",
+        help="in the product description, html tags will be removed",
+    )
+    args = parser.parse_args()
     """transform excel file into another csv file"""
     # set for the get wo size function
     KNOWN_SIZES = {  # pylint: disable=invalid-name
@@ -113,7 +123,7 @@ def main():
 
         # main function
 
-    def process_data(df_input):
+    def process_data(df_input, args):
         print("Starting data processing...")
 
         start_time = time.time()
@@ -162,11 +172,12 @@ def main():
 
         # HTML Description Matching Logic
         print("\nMatching HTML descriptions...")
-        # create a dictionary that is { first sku word : html body }
+        # create a dictionary that is { first sku word : html body } and optionally remove the html tags
         html_map = (
             df_all[df_all["Body HTML"].notna()]
             .groupby(df_all["Variant SKU"].str.split("-").str[0])["Body HTML"]
             .first()
+            .apply(lambda x: re.sub(r"<[^>]*>", "", x) if args.no_html else x)
             .to_dict()
         )
 
@@ -358,7 +369,7 @@ def main():
     print("  Done!")
 
     # call the main function
-    process_data(df_all)
+    process_data(df_all_first_few, args)
 
 
 # Run the main function with cProfile
