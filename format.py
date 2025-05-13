@@ -277,6 +277,8 @@ def main():
             with pd.ExcelWriter(
                 os.path.join("output", f"product_data_{timestamp}.xlsx"),
                 engine="xlsxwriter",
+                # excel has a limit of 5,530 per worksheet. The below option converts urls to strings to suppress error message
+                engine_kwargs={"options": {"strings_to_urls": False}},
             ) as writer:
                 final_df.to_excel(writer, index=False, sheet_name="Sheet1")
                 # [Excel formatting code remains the same]
