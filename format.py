@@ -123,6 +123,39 @@ def main():
 
         # main function
 
+    ALLOWED_TAGS = {
+        "Accessories",
+        "Activewear",
+        "Adult/Men",
+        "Aprons",
+        "Caps",
+        "Chef Jackets",
+        "Chef Pants",
+        "chef shoes",
+        "Gloves",
+        "Jackets",
+        "Jumpers & Hoodies",
+        "Kids",
+        "Kids Aprons",
+        "Mens",
+        "Outerwear",
+        "Pants",
+        "Polo Shirts",
+        "Shirts",
+        "Shorts",
+        "T-Shirts",
+        "Wide Brim Hats",
+        "Youth",
+    }
+
+    # Function to clean tags column
+    def clean_tags(tag_string):
+        if pd.isna(tag_string):
+            return ""
+        tags = [tag.strip() for tag in str(tag_string).split(",")]
+        valid_tags = [tag for tag in tags if tag in ALLOWED_TAGS]
+        return ", ".join(valid_tags)
+
     def process_data(df_input, args):
         print("Starting data processing...")
 
@@ -156,7 +189,9 @@ def main():
             "Variant Weight Unit",
             "Variant Price",
             "image_alt",
+            "Tags",
         ]
+        # Allowed tag values
 
         # Identify dynamically generated URL columns
         url_columns = [col for col in df_cleaned.columns if col.startswith("url_")]
@@ -169,6 +204,11 @@ def main():
 
         # Optionally, reset the index after dropping rows
         df_cleaned = df_cleaned.reset_index(drop=True)
+
+        # only have allowed tag values
+        print("Cleaning Tags column...")
+        df_cleaned["Tags"] = df_cleaned["Tags"].apply(clean_tags)
+        print("  Done!")
 
         # HTML Description Matching Logic
         print("\nMatching HTML descriptions...")
