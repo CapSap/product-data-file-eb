@@ -208,6 +208,7 @@ def main():
         ]
         # Identify dynamically generated URL columns
         url_columns = [col for col in df_cleaned.columns if col.startswith("url_")]
+        print(f"Detected URL columns: {url_columns}")
 
         # Combine base columns with URL columns
         final_columns = columns_to_keep + url_columns
