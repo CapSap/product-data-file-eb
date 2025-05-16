@@ -156,6 +156,10 @@ def main():
         valid_tags = [tag for tag in tags if tag in ALLOWED_TAGS]
         return ", ".join(valid_tags)
 
+    # get the base sku from parent
+    def get_parent_sku(sku):
+        return str(sku).split("-")[0] if pd.notna(sku) else ""
+
     def process_data(df_input, args):
         print("Starting data processing...")
 
@@ -169,6 +173,11 @@ def main():
             df_input["Variant SKU"].apply(get_sku_wo_size),
             total=len(df_input),
             desc="  Generating image_alt",
+        )
+        df_input["Parent Sku"] = tqdm(
+            df_input["Variant SKU"].apply(get_parent_sku),
+            total=len(df_input),
+            desc="  Generating Parent Sku",
         )
         print("  Done!")
 
@@ -272,19 +281,16 @@ def main():
                 pbar.update(1)
         print("  Done!")
 
+        """ 
         # Create parent rows and merge with cleaned data
         print("\nCreating parent rows...")
         parent_rows = create_parent_rows(df_cleaned)
         print("  Done!")
+        """
 
         print("\nFinalizing data...")
         with tqdm(total=3, desc="Saving files") as pbar:
-            final_df = (
-                pd.concat([df_cleaned, parent_rows], ignore_index=True)
-                .drop_duplicates(subset=["Variant SKU"], keep="first")
-                .sort_values(by="Variant SKU")
-                .drop(columns=["image_alt", "ID"])
-            )
+            final_df = df_cleaned.drop(columns=["image_alt", "ID"])
             # Rename columns
             final_df.rename(
                 columns={
