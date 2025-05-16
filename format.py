@@ -171,11 +171,10 @@ def main():
             total=len(df_input),
             desc="  Generating image_alt",
         )
-        df_input["Parent Sku"] = tqdm(
-            df_input["Variant SKU"].apply(get_parent_sku),
-            total=len(df_input),
-            desc="  Generating Parent Sku",
-        )
+
+        df_input["Parent SKU"] = df_input["Variant SKU"].progress_apply(get_parent_sku)
+        print(df_input[["Variant SKU", "Parent SKU"]].sample(n=10))
+
         print("  Done!")
 
         # Remove rows where the column is blank (NaN or empty)
@@ -184,6 +183,7 @@ def main():
         # Define the base columns to keep
         columns_to_keep = [
             "Variant SKU",
+            "Parent SKU",
             "ID",
             "Title",
             "Body HTML",
@@ -307,7 +307,7 @@ def main():
             desired_column_order = [
                 "Supplier Article Number",
                 "EAN",
-                "Parent Sku",
+                "Parent SKU",
                 "Style Name",
                 "main product name",
                 "Size",
