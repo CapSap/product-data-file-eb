@@ -123,6 +123,7 @@ def main():
 
         # main function
 
+    # tags to include
     ALLOWED_TAGS = {
         "Accessories",
         "Activewear",
@@ -290,7 +291,7 @@ def main():
             # Rename columns
             final_df.rename(
                 columns={
-                    "Product SKU": "Supplier Article Number",
+                    "Variant SKU": "Supplier Article Number",
                     "Variant Barcode": "EAN",
                     "Title": "Style Name",
                     "Vendor": "Brand",
@@ -298,7 +299,6 @@ def main():
                     "Option1 Value": "Colour",
                     "Option2 Value": "Size",
                     "Variant Price": "RRP Price",
-                    "Variant SKU": "Product SKU",
                 },
                 inplace=True,
             )
@@ -342,6 +342,11 @@ def main():
                 "Variant Weight Unit",
                 "Tags",
             ]
+
+            # Insert blank columns for any that are missing
+            for col in desired_column_order:
+                if col not in final_df.columns:
+                    final_df[col] = ""
             final_df = final_df[desired_column_order + url_columns]
 
             pbar.update(1)
