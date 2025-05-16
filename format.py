@@ -298,7 +298,7 @@ def main():
                     "Body HTML": "Long Description",
                     "Option1 Value": "Colour",
                     "Option2 Value": "Size",
-                    "Variant Price": "RRP Price",
+                    "Variant Price": "RRP ex GST",
                 },
                 inplace=True,
             )
@@ -323,7 +323,7 @@ def main():
                 "net price ex gst",
                 "net price inc gst",
                 "RRP Price",
-                "RRP ex gst",
+                "RRP ex GST",
                 "qty break 2",
                 "list price 2",
                 "net list price 2",
