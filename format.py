@@ -191,8 +191,6 @@ def main():
             "image_alt",
             "Tags",
         ]
-        # Allowed tag values
-
         # Identify dynamically generated URL columns
         url_columns = [col for col in df_cleaned.columns if col.startswith("url_")]
 
@@ -317,7 +315,7 @@ def main():
             with pd.ExcelWriter(
                 os.path.join("output", f"product_data_{timestamp}.xlsx"),
                 engine="xlsxwriter",
-                # excel has a limit of 5,530 per worksheet. The below option converts urls to strings to suppress error message
+                # excel has a limit of 5,530 per worksheet. The below option converts urls to strings to overcome excel's url limit
                 engine_kwargs={"options": {"strings_to_urls": False}},
             ) as writer:
                 final_df.to_excel(writer, index=False, sheet_name="Sheet1")
