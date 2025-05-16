@@ -288,8 +288,11 @@ def main():
             # Rename columns
             final_df.rename(
                 columns={
+                    "Product SKU": "Supplier Article Number",
+                    "Variant Barcode": "EAN",
+                    "Title": "Style Name"
                     "Vendor": "Brand",
-                    "Body HTML": "Description (HTML)",
+                    "Body HTML": "Long Description",
                     "Option1 Value": "Colour",
                     "Option2 Value": "Size",
                     "Variant Price": "RRP Price",
@@ -297,6 +300,48 @@ def main():
                 },
                 inplace=True,
             )
+
+            # reorder columns
+            desired_column_order = [
+                "Supplier Article Number",
+                "EAN",
+                "Parent Sku",
+                "Style Name",
+                "main prouct name",
+                "Size",
+                "Colour",
+                "item name (variant)",
+                "size code",
+                "short description",
+                "Long Description",
+                "country of origin",
+                "warranty",
+                "list pric ex gst",
+                "wl discount",
+                "net price ex gst",
+                "net price inc gst",
+                "RRP Price",
+                "RRP ex gst",
+                "qty break 2",
+                "list price 2",
+                "net list price 2",
+                "qty break 3",
+                "list price 3",
+                "net list price 3",
+                "qty break 4",
+                "list price 3",
+                "net list price 4",
+                "qty break 5",
+                "list price 5",
+                "net list price 5",
+                "Brand",
+                "supplier",
+                "Variant Weight",
+                "Variant Weight Unit",
+                "Tags",
+            ]
+            final_df = final_df[desired_column_order + url_columns]
+
             pbar.update(1)
 
             # Get current date and time formatted as 'YYYY-MM-DD_HH-MM-SS'
@@ -418,4 +463,5 @@ def main():
 
 # Run the main function with cProfile
 if __name__ == "__main__":
+
     cProfile.run("main()", "profile_output.prof")
