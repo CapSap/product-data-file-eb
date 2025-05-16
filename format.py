@@ -290,7 +290,7 @@ def main():
                 columns={
                     "Product SKU": "Supplier Article Number",
                     "Variant Barcode": "EAN",
-                    "Title": "Style Name"
+                    "Title": "Style Name",
                     "Vendor": "Brand",
                     "Body HTML": "Long Description",
                     "Option1 Value": "Colour",
