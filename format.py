@@ -8,7 +8,7 @@ import pandas as pd
 from tqdm import tqdm
 import argparse
 
-from utils.helpers import match_string_in_url
+from utils.helpers import match_string_in_url, get_parent_sku
 
 
 def main():
@@ -155,10 +155,6 @@ def main():
         tags = [tag.strip() for tag in str(tag_string).split(",")]
         valid_tags = [tag for tag in tags if tag in ALLOWED_TAGS]
         return ", ".join(valid_tags)
-
-    # get the base sku from parent
-    def get_parent_sku(sku):
-        return str(sku).split("-")[0] if pd.notna(sku) else ""
 
     def process_data(df_input, args):
         print("Starting data processing...")

@@ -1,6 +1,7 @@
 """Helper functions"""
 
 import re
+import pandas as pd
 
 
 # func that matches a sku with url text
@@ -39,3 +40,8 @@ def match_string_in_url(search_string, url):
         return match is not None
     except Exception:
         return False
+
+
+# get the base sku from parent
+def get_parent_sku(sku):
+    return str(sku).strip().split("-")[0] if pd.notna(sku) else ""
