@@ -177,6 +177,13 @@ def main():
 
         print("  Done!")
 
+        # calcualte RRP with gst
+        print("\n  Calculating GST price..")
+        df_input["RRP inc GST"] = (
+            df_input["Variant Price"].astype(float).mul(1.1).round(2)
+        )
+        print("  Done!")
+
         # Remove rows where the column is blank (NaN or empty)
         df_cleaned = df_input.dropna(subset=["Variant SKU"])
 
@@ -196,6 +203,7 @@ def main():
             "Variant Price",
             "image_alt",
             "Tags",
+            "RRP inc GST",
         ]
         # Identify dynamically generated URL columns
         url_columns = [col for col in df_cleaned.columns if col.startswith("url_")]
