@@ -330,7 +330,7 @@ def main():
                 "wl discount",
                 "net price ex gst",
                 "net price inc gst",
-                "RRP Price",
+                "RRP inc GST",
                 "RRP ex GST",
                 "qty break 2",
                 "list price 2",
