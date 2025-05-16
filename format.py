@@ -158,7 +158,7 @@ def main():
         return ", ".join(valid_tags)
 
     def process_data(df_input, args):
-        print("Starting data processing...")
+        print("\nStarting data processing...")
 
         start_time = time.time()
         # Enable tqdm for pandas apply
@@ -172,17 +172,18 @@ def main():
             desc="  Generating image_alt",
         )
 
+        print("    Done!")
+        print("  Getting parent SKUs..")
         df_input["Parent SKU"] = df_input["Variant SKU"].progress_apply(get_parent_sku)
-        print(df_input[["Variant SKU", "Parent SKU"]].sample(n=10))
 
-        print("  Done!")
+        print("    Done!")
 
         # calcualte RRP with gst
-        print("\n  Calculating GST price..")
+        print("  Calculating GST price..")
         df_input["RRP inc GST"] = (
             df_input["Variant Price"].astype(float).mul(1.1).round(2)
         )
-        print("  Done!")
+        print("    Done!")
 
         # Remove rows where the column is blank (NaN or empty)
         df_cleaned = df_input.dropna(subset=["Variant SKU"])
@@ -218,12 +219,12 @@ def main():
         df_cleaned = df_cleaned.reset_index(drop=True)
 
         # only have allowed tag values
-        print("Cleaning Tags column...")
+        print("  Cleaning Tags column...")
         df_cleaned["Tags"] = df_cleaned["Tags"].apply(clean_tags)
-        print("  Done!")
+        print("    Done!")
 
         # HTML Description Matching Logic
-        print("\nMatching HTML descriptions...")
+        print("  Matching HTML descriptions...")
         # create a dictionary that is { first sku word : html body } and optionally remove the html tags
         html_map = (
             df_all[df_all["Body HTML"].notna()]
@@ -232,6 +233,7 @@ def main():
             .apply(lambda x: re.sub(r"<[^>]*>", "", x) if args.no_html else x)
             .to_dict()
         )
+        print("    Done!")
 
         # this func accepts a row, and matches it with the dictionary { first sku word : html body }
         # if nothing is found in the map, return the html body that already exists on the row
@@ -267,7 +269,9 @@ def main():
                 match = filtered_images[mask]
             else:
                 # add a log to display when the ID search fails
-                print(f"Fallback triggered for SKU: {search_string} (ID: {parent_id})")
+                print(
+                    f"    Fallback triggered for SKU: {search_string} (ID: {parent_id})"
+                )
                 mask = df_images["Trimmed Src"].apply(
                     lambda x: match_string_in_url(search_string, str(x))
                 )
@@ -279,12 +283,12 @@ def main():
                     df_cleaned.at[index, column_name] = value
 
         # Apply the function to each row with tqdm progress bar
-        print("\nMatching images...")
+        print("  Matching images...")
         with tqdm(total=len(df_cleaned), desc="  Processing image matches") as pbar:
             for index, row in df_cleaned.iterrows():
                 process_row(index, row)
                 pbar.update(1)
-        print("  Done!")
+        print("    Done!")
 
         """ 
         # Create parent rows and merge with cleaned data
@@ -428,7 +432,7 @@ def main():
             pbar.update(1)
 
         # Display completion message
-        print("Script completed successfully!")
+        print("  Script completed successfully!")
 
         # Calculate the elapsed time and display it
         elapsed_time = time.time() - start_time
@@ -461,7 +465,7 @@ def main():
 
     print("  Done!")
     # Create a URL df
-    print("\nProcessing image URLs and creating data frame...")
+    print("Processing image URLs and creating data frame...")
     df_images = (
         df_all[["ID", "Image Src"]].drop_duplicates().dropna().reset_index(drop=True)
     )
