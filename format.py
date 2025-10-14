@@ -8,7 +8,7 @@ import pandas as pd
 from tqdm import tqdm
 import argparse
 
-from utils.helpers import match_string_in_url
+from utils.helpers import match_string_in_url, get_sku_wo_size, create_parent_rows
 
 
 def main():
@@ -72,57 +72,7 @@ def main():
         "XXS",
     }
 
-    # Function to remove size from sku
-    def get_sku_wo_size(sku):
-        sku = str(sku)  # Ensure it's a string
-        parts = sku.split("-")
-
-        if len(parts) >= 2 and parts[-1] in KNOWN_SIZES:
-            return "-".join(parts[:-1])  # Remove the last part if it's a known size
-
-        return sku  # Keep everything if no size is detected
-
-    # function to create parent rows
-    def create_parent_rows(df):
-        parent_rows = (
-            df.groupby(df["Variant SKU"].apply(get_sku_wo_size))
-            .agg(
-                {
-                    "Option1 Value": "first",
-                    "Title": "first",
-                    "Vendor": "first",
-                    "Body HTML": "first",
-                    "image_alt": "first",
-                }
-            )
-            .reset_index()
-        )
-
-        parent_rows.rename(columns={"index": "Variant SKU"}, inplace=True)
-        parent_rows["Option2 Value"] = None
-        parent_rows["Variant Weight"] = None
-        parent_rows["Variant Price"] = None
-
-        # identify url column names
-        url_columns = [col for col in df.columns if col.startswith("url_")]
-
-        # Initialize URL columns in parent_rows with an empty value
-        for col in url_columns:
-            parent_rows[col] = None
-
-        # Copy URL columns from the first matching child
-        for idx, parent_row in parent_rows.iterrows():
-            sku_prefix = get_sku_wo_size(parent_row["Variant SKU"])
-            matching_rows = df[df["Variant SKU"].apply(get_sku_wo_size) == sku_prefix]
-            if not matching_rows.empty:
-                for col in url_columns:
-                    if col in matching_rows.columns:
-                        parent_rows.at[idx, col] = matching_rows.iloc[0][col]
-
-        return parent_rows
-
-        # main function
-
+    # main function
     def process_data(df_input, args):
         print("Starting data processing...")
 
