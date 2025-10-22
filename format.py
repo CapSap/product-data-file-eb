@@ -241,7 +241,7 @@ def main():
     print("Loading Excel files...")
     # Read the single export file from shopify matrixify
     # Get all matching files
-    files = glob.glob(os.path.join("excel-files", "Export_*.xlsx"))
+    files = glob.glob(os.path.join("excel-files", "*.xlsx"))
     # define df_all in the top level  main func
     df_all = None
     # Find the most recently created file
