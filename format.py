@@ -28,6 +28,14 @@ def main():
     args = parser.parse_args()
     """transform excel file into another csv file"""
 
+    # notes what options should i allow
+    # hoops = tags column
+    # iws = has some specific columns that they want
+    # generic:
+    # include a parent row
+    # include shopify ids for our own use
+    # include discontinued skus
+
     # main function
     def process_data(df_input, args):
         print("Starting data processing...")
