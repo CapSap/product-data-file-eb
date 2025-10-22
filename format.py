@@ -3,12 +3,17 @@ import glob
 import cProfile
 import re
 import time
+import argparse
 import numpy as np
 import pandas as pd
 from tqdm import tqdm
-import argparse
 
-from utils.helpers import match_string_in_url, get_sku_wo_size, create_parent_rows
+from utils.helpers import (
+    match_string_in_url,
+    get_sku_wo_size,
+    create_parent_rows,
+    clean_tags,
+)
 
 
 def main():
@@ -57,6 +62,7 @@ def main():
             "Variant Weight Unit",
             "Variant Price",
             "image_alt",
+            "Tags",
         ]
 
         # Identify dynamically generated URL columns
@@ -70,6 +76,11 @@ def main():
 
         # Optionally, reset the index after dropping rows
         df_cleaned = df_cleaned.reset_index(drop=True)
+
+        # only have allowed tag values
+        print("Cleaning Tags column...")
+        df_cleaned["Tags"] = df_cleaned["Tags"].apply(clean_tags)
+        print("  Done!")
 
         # HTML Description Matching Logic
         print("\nMatching HTML descriptions...")

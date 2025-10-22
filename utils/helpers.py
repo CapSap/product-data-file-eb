@@ -1,6 +1,7 @@
 """Helper functions"""
 
 import re
+import pandas as pd
 
 
 # func that matches a sku with url text
@@ -140,3 +141,38 @@ KNOWN_SIZES = {  # pylint: disable=invalid-name
     "XS",
     "XXS",
 }
+
+# define a set of allowed tags to be whitelisted for final output, and remove all other tags from data
+ALLOWED_TAGS = {
+    "Accessories",
+    "Activewear",
+    "Adult/Men",
+    "Aprons",
+    "Caps",
+    "Chef Jackets",
+    "Chef Pants",
+    "chef shoes",
+    "Gloves",
+    "Jackets",
+    "Jumpers & Hoodies",
+    "Kids",
+    "Kids Aprons",
+    "Mens",
+    "Outerwear",
+    "Pants",
+    "Polo Shirts",
+    "Shirts",
+    "Shorts",
+    "T-Shirts",
+    "Wide Brim Hats",
+    "Youth",
+}
+
+
+# Function to clean tags column
+def clean_tags(tag_string):
+    if pd.isna(tag_string):
+        return ""
+    tags = [tag.strip() for tag in str(tag_string).split(",")]
+    valid_tags = [tag for tag in tags if tag in ALLOWED_TAGS]
+    return ", ".join(valid_tags)
