@@ -48,6 +48,14 @@ def main():
         # Remove rows where the column is blank (NaN or empty)
         df_cleaned = df_input.dropna(subset=["Variant SKU"])
 
+        # Remove discontinued skus
+        df_cleaned = df_cleaned[
+            df_cleaned[
+                "Variant Metafield: custom.product_status [single_line_text_field]"
+            ]
+            != "Discontinued"
+        ]
+
         # Define the base columns to keep
         columns_to_keep = [
             "Variant SKU",
