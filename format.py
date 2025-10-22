@@ -33,9 +33,10 @@ def main():
     # hoops = tags column
     # iws = has some specific columns that they want
     # generic:
-    # include a parent row
+    # include a parent row or not
     # include shopify ids for our own use
     # include discontinued skus
+    # calculate a gst price
 
     # main function
     def process_data(df_input, args):
