@@ -7,6 +7,7 @@ import argparse
 import numpy as np
 import pandas as pd
 from tqdm import tqdm
+from xlsxwriter.utility import xl_col_to_name
 
 from utils.helpers import (
     match_string_in_url,
@@ -228,13 +229,11 @@ def main():
 
                 for col in url_columns:
                     col_idx = final_df.columns.get_loc(col)
-                    excel_col_letter = chr(
-                        65 + col_idx
-                    )  # Convert column index to Excel letter (A, B, C, ...)
+                    col_letter = xl_col_to_name(col_idx)
 
                     # Write the URLs as text (prefix with a single quote)
                     worksheet.set_column(
-                        f"{excel_col_letter}:{excel_col_letter}", None, text_format
+                        f"{col_letter}:{col_letter}", None, text_format
                     )
 
                     for row_idx in range(
