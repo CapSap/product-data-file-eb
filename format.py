@@ -31,7 +31,9 @@ def main():
 
     # notes what options should i allow
     # hoops = tags column
-    # iws = has some specific columns that they want
+    # iws = has some specific columns that they want. there is an extra column for parent sku,
+    # whereas in normal i think we have a new seperate row for parent.
+
     # generic:
     # include a parent row or not
     # include shopify ids for our own use
