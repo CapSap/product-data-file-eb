@@ -2,6 +2,8 @@
 
 import re
 
+import pandas as pd
+
 
 # func that matches a sku with url text
 def match_string_in_url(search_string, url):
@@ -89,6 +91,11 @@ def create_parent_rows(df):
                     parent_rows.at[idx, col] = matching_rows.iloc[0][col]
 
     return parent_rows
+
+
+# get the base sku from parent
+def get_parent_sku(sku):
+    return str(sku).strip().split("-")[0] if pd.notna(sku) else ""
 
 
 # set for the get wo size function
