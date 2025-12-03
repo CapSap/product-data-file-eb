@@ -6,7 +6,6 @@ import time
 import numpy as np
 import pandas as pd
 from tqdm import tqdm
-import argparse
 
 from utils.cli import parse_args
 from utils.helpers import match_string_in_url, get_sku_wo_size, create_parent_rows
