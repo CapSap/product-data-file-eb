@@ -8,20 +8,12 @@ import pandas as pd
 from tqdm import tqdm
 import argparse
 
+from utils.cli import parse_args
 from utils.helpers import match_string_in_url, get_sku_wo_size, create_parent_rows
 
 
 def main():
-    parser = argparse.ArgumentParser(
-        description="Create a product data file for distribution to EB customers, including url link to images"
-    )
-    parser.add_argument(
-        "--no-html",
-        action="store_true",
-        help="in the product description, html tags will be removed",
-    )
-    args = parser.parse_args()
-    """transform excel file into another csv file"""
+    args = parse_args()
 
     # main function
     def process_data(df_input, args):
