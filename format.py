@@ -3,16 +3,34 @@ import glob
 import cProfile
 import re
 import time
+import argparse
 import numpy as np
 import pandas as pd
 from tqdm import tqdm
-
 from utils.cli import parse_args
-from utils.helpers import match_string_in_url, get_sku_wo_size, create_parent_rows
+from xlsxwriter.utility import xl_col_to_name
+
+from utils.helpers import (
+    match_string_in_url,
+    get_sku_wo_size,
+    create_parent_rows,
+    clean_tags,
+)
 
 
 def main():
     args = parse_args()
+
+    # notes what options should i allow
+    # hoops = tags column
+    # iws = has some specific columns that they want. there is an extra column for parent sku,
+    # whereas in normal i think we have a new seperate row for parent.
+
+    # generic:
+    # include a parent row or not
+    # include shopify ids for our own use
+    # include discontinued skus
+    # calculate a gst price
 
     # main function
     def process_data(df_input, args):
@@ -34,6 +52,14 @@ def main():
         # Remove rows where the column is blank (NaN or empty)
         df_cleaned = df_input.dropna(subset=["Variant SKU"])
 
+        # Remove discontinued skus
+        df_cleaned = df_cleaned[
+            df_cleaned[
+                "Variant Metafield: custom.product_status [single_line_text_field]"
+            ]
+            != "Discontinued"
+        ]
+
         # Define the base columns to keep
         columns_to_keep = [
             "Variant SKU",
@@ -48,6 +74,7 @@ def main():
             "Variant Weight Unit",
             "Variant Price",
             "image_alt",
+            "Tags",
         ]
 
         # Identify dynamically generated URL columns
@@ -61,6 +88,11 @@ def main():
 
         # Optionally, reset the index after dropping rows
         df_cleaned = df_cleaned.reset_index(drop=True)
+
+        # only have allowed tag values
+        print("Cleaning Tags column...")
+        df_cleaned["Tags"] = df_cleaned["Tags"].apply(clean_tags)
+        print("  Done!")
 
         # HTML Description Matching Logic
         print("\nMatching HTML descriptions...")
@@ -192,13 +224,11 @@ def main():
 
                 for col in url_columns:
                     col_idx = final_df.columns.get_loc(col)
-                    excel_col_letter = chr(
-                        65 + col_idx
-                    )  # Convert column index to Excel letter (A, B, C, ...)
+                    col_letter = xl_col_to_name(col_idx)
 
                     # Write the URLs as text (prefix with a single quote)
                     worksheet.set_column(
-                        f"{excel_col_letter}:{excel_col_letter}", None, text_format
+                        f"{col_letter}:{col_letter}", None, text_format
                     )
 
                     for row_idx in range(
@@ -232,7 +262,7 @@ def main():
     print("Loading Excel files...")
     # Read the single export file from shopify matrixify
     # Get all matching files
-    files = glob.glob(os.path.join("excel-files", "Export_*.xlsx"))
+    files = glob.glob(os.path.join("excel-files", "*.xlsx"))
     # define df_all in the top level  main func
     df_all = None
     # Find the most recently created file

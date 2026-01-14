@@ -1,6 +1,7 @@
 """Helper functions"""
 
 import re
+import pandas as pd
 
 import pandas as pd
 
@@ -53,8 +54,8 @@ def get_sku_wo_size(sku):
     return sku  # Keep everything if no size is detected
 
 
-# function to create parent rows
 def create_parent_rows(df):
+    # function to create parent rows
     parent_rows = (
         df.groupby(df["Variant SKU"].apply(get_sku_wo_size))
         .agg(
@@ -147,3 +148,44 @@ KNOWN_SIZES = {  # pylint: disable=invalid-name
     "XS",
     "XXS",
 }
+
+# set for clean_tags function
+ALLOWED_TAGS = {
+    "Accessories",
+    "Activewear",
+    "Adult/Men",
+    "Aprons",
+    "Caps",
+    "Chef Jackets",
+    "Chef Pants",
+    "chef shoes",
+    "Gloves",
+    "Jackets",
+    "Jumpers & Hoodies",
+    "Kids",
+    "Kids Aprons",
+    "Mens",
+    "Outerwear",
+    "Pants",
+    "Polo Shirts",
+    "Shirts",
+    "Shorts",
+    "T-Shirts",
+    "Wide Brim Hats",
+    "Youth",
+}
+
+
+def clean_tags(tag_string):
+    # Function to clean the tags column and only allow pre-defined values
+    # above set is the allowed whitelist of tags, and remove all other tags
+    if pd.isna(tag_string):
+        return ""
+    tags = [tag.strip() for tag in str(tag_string).split(",")]
+    valid_tags = [tag for tag in tags if tag in ALLOWED_TAGS]
+    return ", ".join(valid_tags)
+
+
+def get_parent_sku(sku):
+    # get the base sku from parent
+    return str(sku).strip().split("-", maxsplit=1)[0] if pd.notna(sku) else ""
