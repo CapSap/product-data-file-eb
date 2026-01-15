@@ -60,6 +60,19 @@ def main():
             != "Discontinued"
         ]
 
+        # Remove products that are set to hide from search (seo.hidden)
+        # Force column to numeric (errors='coerce' turns non-numbers into NaN)
+        seo_col = "Metafield: seo.hidden [number_integer]"
+        df_cleaned[seo_col] = pd.to_numeric(df_cleaned[seo_col], errors="coerce")
+
+        # Group by 'Handle' and forward-fill the SEO column
+        # This copies the "1" from the first row to all other rows with the same handle
+        df_cleaned[seo_col] = df_cleaned.groupby("ID")[seo_col].ffill()
+
+        # 3. Now you can safely filter.
+        # Rows that were originally empty but belonged to a 'hidden' parent are now '1'
+        df_cleaned = df_cleaned[df_cleaned[seo_col] != 1]
+
         # Define the base columns to keep
         columns_to_keep = [
             "Variant SKU",
