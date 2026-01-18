@@ -313,7 +313,7 @@ def main():
 
             # Save to Excel
             with pd.ExcelWriter(
-                os.path.join("output", f"product_data_{timestamp}.xlsx"),
+                os.path.join("output", f"hoops_product_data_{timestamp}.xlsx"),
                 engine="xlsxwriter",
                 # excel has a limit of 5,530 per worksheet. The below option converts urls to strings to overcome excel's url limit
                 engine_kwargs={"options": {"strings_to_urls": False}},
@@ -380,7 +380,7 @@ def main():
     print("Loading Excel files...")
     # Read the single export file from shopify matrixify
     # Get all matching files
-    files = glob.glob(os.path.join("excel-files", "Export_*.xlsx"))
+    files = glob.glob(os.path.join("excel-files", "*.xlsx"))
     # define df_all in the top level  main func
     df_all = None
     # Find the most recently created file
