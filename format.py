@@ -36,6 +36,9 @@ def main():
     # refactor html body. replace with ffill()
     # ignore emb skus
 
+    # i need to exclude products where the metafield hidefromsearch = 1
+    # seo.hidden - looks like a shopify built in
+
     # main function
     def process_data(df_input, args):
         print("Starting data processing...")
