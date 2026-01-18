@@ -32,6 +32,10 @@ def main():
     # include discontinued skus
     # calculate a gst price
 
+    # more todos:
+    # refactor html body. replace with ffill()
+    # ignore emb skus
+
     # main function
     def process_data(df_input, args):
         print("Starting data processing...")
@@ -51,6 +55,9 @@ def main():
 
         # Remove rows where the column is blank (NaN or empty)
         df_cleaned = df_input.dropna(subset=["Variant SKU"])
+
+        # remove unpublished skus
+        # remove archived skus
 
         # Remove discontinued skus
         df_cleaned = df_cleaned[
@@ -173,14 +180,14 @@ def main():
 
         # Create parent rows and merge with cleaned data
         print("\nCreating parent rows...")
-        parent_rows = create_parent_rows(df_cleaned)
+        # parent_rows = create_parent_rows(df_cleaned)
         print("  Done!")
 
         print("\nFinalizing data...")
         with tqdm(total=3, desc="Saving files") as pbar:
             final_df = (
-                pd.concat([df_cleaned, parent_rows], ignore_index=True)
-                .drop_duplicates(subset=["Variant SKU"], keep="first")
+                # pd.concat([df_cleaned, parent_rows], ignore_index=True)
+                df_cleaned.drop_duplicates(subset=["Variant SKU"], keep="first")
                 .sort_values(by="Variant SKU")
                 .drop(columns=["image_alt", "ID"])
             )
