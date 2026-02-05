@@ -299,8 +299,8 @@ def main():
 
     df_all = pd.read_excel(latest_file)
     df_all = df_all[
-        (df_all["Status"].str.lower() != "archived") & (df_all["Published"] != False)
-    ]  # Filter out archived rows
+        (df_all["Status"].str.lower() != "archived") & (df_all["Published"] == True)
+    ]  # Filter out archived rows, and not published (draft products are not published)
     df_all_first_few = df_all.head(1000)
 
     # Create a URL df
