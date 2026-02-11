@@ -9,6 +9,7 @@ import pandas as pd
 from tqdm import tqdm
 from utils.cli import parse_args
 from xlsxwriter.utility import xl_col_to_name
+from datetime import datetime
 
 from utils.helpers import (
     match_string_in_url,
@@ -213,10 +214,9 @@ def main():
             pbar.update(1)
 
             # Get current date and time formatted as 'YYYY-MM-DD_HH-MM-SS'
-            timestamp = time.strftime("%H-%M%p on %A %B %dth")
+            timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
 
             # Save to CSV
-            timestamp = time.strftime("%H-%M%p on %A %B %dth")
             final_df.to_csv(
                 os.path.join("output", f"product_data_{timestamp}.csv"),
                 index=False,
