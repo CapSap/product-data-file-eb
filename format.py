@@ -151,20 +151,24 @@ def main():
             if not search_string:  # Skip empty search strings
                 return
 
+            # filter images for specific parent product
             filtered_images = df_images[df_images["ID"] == parent_id]
 
             if not filtered_images.empty:
-
                 # Create a mask for matching rows using our new function
-                mask = filtered_images["Trimmed Src"].apply(
-                    lambda x: match_string_in_url(search_string, str(x))
+                mask = filtered_images.apply(
+                    lambda x: match_string_in_url(search_string, str(x["Trimmed Src"]))
+                    or match_string_in_url(search_string, str(x["Image Alt Text"])),
+                    axis=1,
                 )
                 match = filtered_images[mask]
             else:
                 # add a log to display when the ID search fails
                 print(f"Fallback triggered for SKU: {search_string} (ID: {parent_id})")
-                mask = df_images["Trimmed Src"].apply(
-                    lambda x: match_string_in_url(search_string, str(x))
+                mask = df_images.apply(
+                    lambda x: match_string_in_url(search_string, str(x["Trimmed Src"]))
+                    or match_string_in_url(search_string, str(x["Image Alt Text"])),
+                    axis=1,
                 )
                 match = df_images[mask]
             # If matches are found, append them to the row in separate columns
