@@ -310,7 +310,12 @@ def main():
     # Create a URL df
     print("\nProcessing image URLs and creating data frame...")
     df_images = (
-        df_all[["ID", "Image Src"]].drop_duplicates().dropna().reset_index(drop=True)
+        df_all[["ID", "Image Src", "Image Alt Text"]]
+        .drop_duplicates()
+        .dropna(
+            subset=["ID", "Image Src"]
+        )  # Only drop if we don't have the ID or the Link
+        .reset_index(drop=True)
     )
     # trim extra words
     df_images["Trimmed Src"] = df_images["Image Src"].str.extract(
