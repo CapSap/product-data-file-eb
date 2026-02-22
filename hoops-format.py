@@ -3,43 +3,159 @@ import glob
 import cProfile
 import re
 import time
-import argparse
 import numpy as np
 import pandas as pd
 from tqdm import tqdm
-from utils.cli import parse_args
-from xlsxwriter.utility import xl_col_to_name
+import argparse
 
-from utils.helpers import (
-    match_string_in_url,
-    get_sku_wo_size,
-    create_parent_rows,
-    clean_tags,
-)
+from utils.helpers import match_string_in_url
 
 
 def main():
-    args = parse_args()
+    parser = argparse.ArgumentParser(
+        description="Create a product data file for distribution to EB customers, including url link to images"
+    )
+    parser.add_argument(
+        "--no-html",
+        action="store_true",
+        help="in the product description, html tags will be removed",
+    )
+    args = parser.parse_args()
+    """transform excel file into another csv file"""
+    # set for the get wo size function
+    KNOWN_SIZES = {  # pylint: disable=invalid-name
+        "0",
+        "26",
+        "28",
+        "30",
+        "32",
+        "34",
+        "35",
+        "36",
+        "37",
+        "38",
+        "39",
+        "40",
+        "41",
+        "42",
+        "43",
+        "44",
+        "45",
+        "46",
+        "47",
+        "48",
+        "50",
+        "52",
+        "54",
+        "56",
+        "58",
+        "60",
+        "62",
+        "64",
+        "66",
+        "68",
+        "2XL",
+        "3XL",
+        "4XL",
+        "5XL",
+        "6XL",
+        "7XL",
+        "8XL",
+        "L",
+        "LXL",
+        "M",
+        "S",
+        "SM",
+        "XL",
+        "XXL",
+        "XS",
+        "XXS",
+    }
 
-    # notes what options should i allow
-    # hoops = tags column
-    # iws = has some specific columns that they want. there is an extra column for parent sku,
-    # whereas in normal i think we have a new seperate row for parent.
+    # Function to remove size from sku
+    def get_sku_wo_size(sku):
+        sku = str(sku)  # Ensure it's a string
+        parts = sku.split("-")
 
-    # generic:
-    # include a parent row or not
-    # include shopify ids for our own use
-    # include discontinued skus
-    # calculate a gst price
+        if len(parts) >= 2 and parts[-1] in KNOWN_SIZES:
+            return "-".join(parts[:-1])  # Remove the last part if it's a known size
 
-    # more todos:
-    # refactor html body. replace with ffill()
-    # ignore emb skus
+        return sku  # Keep everything if no size is detected
 
-    # i need to exclude products where the metafield hidefromsearch = 1
-    # seo.hidden - looks like a shopify built in
+    # function to create parent rows
+    def create_parent_rows(df):
+        parent_rows = (
+            df.groupby(df["Variant SKU"].apply(get_sku_wo_size))
+            .agg(
+                {
+                    "Option1 Value": "first",
+                    "Title": "first",
+                    "Vendor": "first",
+                    "Body HTML": "first",
+                    "image_alt": "first",
+                }
+            )
+            .reset_index()
+        )
 
-    # main function
+        parent_rows.rename(columns={"index": "Variant SKU"}, inplace=True)
+        parent_rows["Option2 Value"] = None
+        parent_rows["Variant Weight"] = None
+        parent_rows["Variant Price"] = None
+
+        # identify url column names
+        url_columns = [col for col in df.columns if col.startswith("url_")]
+
+        # Initialize URL columns in parent_rows with an empty value
+        for col in url_columns:
+            parent_rows[col] = None
+
+        # Copy URL columns from the first matching child
+        for idx, parent_row in parent_rows.iterrows():
+            sku_prefix = get_sku_wo_size(parent_row["Variant SKU"])
+            matching_rows = df[df["Variant SKU"].apply(get_sku_wo_size) == sku_prefix]
+            if not matching_rows.empty:
+                for col in url_columns:
+                    if col in matching_rows.columns:
+                        parent_rows.at[idx, col] = matching_rows.iloc[0][col]
+
+        return parent_rows
+
+        # main function
+
+    ALLOWED_TAGS = {
+        "Accessories",
+        "Activewear",
+        "Adult/Men",
+        "Aprons",
+        "Caps",
+        "Chef Jackets",
+        "Chef Pants",
+        "chef shoes",
+        "Gloves",
+        "Jackets",
+        "Jumpers & Hoodies",
+        "Kids",
+        "Kids Aprons",
+        "Mens",
+        "Outerwear",
+        "Pants",
+        "Polo Shirts",
+        "Shirts",
+        "Shorts",
+        "T-Shirts",
+        "Wide Brim Hats",
+        "Youth",
+    }
+
+    # Function to clean tags column
+    def clean_tags(tag_string):
+        if pd.isna(tag_string):
+            return ""
+        tags = [tag.strip() for tag in str(tag_string).split(",")]
+        valid_tags = [tag for tag in tags if tag in ALLOWED_TAGS]
+        return ", ".join(valid_tags)
+
     def process_data(df_input, args):
         print("Starting data processing...")
 
@@ -59,30 +175,6 @@ def main():
         # Remove rows where the column is blank (NaN or empty)
         df_cleaned = df_input.dropna(subset=["Variant SKU"])
 
-        # remove unpublished skus
-        # remove archived skus
-
-        # Remove discontinued skus
-        df_cleaned = df_cleaned[
-            df_cleaned[
-                "Variant Metafield: custom.product_status [single_line_text_field]"
-            ]
-            != "Discontinued"
-        ]
-
-        # Remove products that are set to hide from search (seo.hidden)
-        # Force column to numeric (errors='coerce' turns non-numbers into NaN)
-        seo_col = "Metafield: seo.hidden [number_integer]"
-        df_cleaned[seo_col] = pd.to_numeric(df_cleaned[seo_col], errors="coerce")
-
-        # Group by 'Handle' and forward-fill the SEO column
-        # This copies the "1" from the first row to all other rows with the same handle
-        df_cleaned[seo_col] = df_cleaned.groupby("ID")[seo_col].ffill()
-
-        # 3. Now you can safely filter.
-        # Rows that were originally empty but belonged to a 'hidden' parent are now '1'
-        df_cleaned = df_cleaned[df_cleaned[seo_col] != 1]
-
         # Define the base columns to keep
         columns_to_keep = [
             "Variant SKU",
@@ -99,7 +191,6 @@ def main():
             "image_alt",
             "Tags",
         ]
-
         # Identify dynamically generated URL columns
         url_columns = [col for col in df_cleaned.columns if col.startswith("url_")]
 
@@ -183,14 +274,14 @@ def main():
 
         # Create parent rows and merge with cleaned data
         print("\nCreating parent rows...")
-        # parent_rows = create_parent_rows(df_cleaned)
+        parent_rows = create_parent_rows(df_cleaned)
         print("  Done!")
 
         print("\nFinalizing data...")
         with tqdm(total=3, desc="Saving files") as pbar:
             final_df = (
-                # pd.concat([df_cleaned, parent_rows], ignore_index=True)
-                df_cleaned.drop_duplicates(subset=["Variant SKU"], keep="first")
+                pd.concat([df_cleaned, parent_rows], ignore_index=True)
+                .drop_duplicates(subset=["Variant SKU"], keep="first")
                 .sort_values(by="Variant SKU")
                 .drop(columns=["image_alt", "ID"])
             )
@@ -222,7 +313,7 @@ def main():
 
             # Save to Excel
             with pd.ExcelWriter(
-                os.path.join("output", f"product_data_{timestamp}.xlsx"),
+                os.path.join("output", f"hoops_product_data_{timestamp}.xlsx"),
                 engine="xlsxwriter",
                 # excel has a limit of 5,530 per worksheet. The below option converts urls to strings to overcome excel's url limit
                 engine_kwargs={"options": {"strings_to_urls": False}},
@@ -249,11 +340,13 @@ def main():
 
                 for col in url_columns:
                     col_idx = final_df.columns.get_loc(col)
-                    col_letter = xl_col_to_name(col_idx)
+                    excel_col_letter = chr(
+                        65 + col_idx
+                    )  # Convert column index to Excel letter (A, B, C, ...)
 
                     # Write the URLs as text (prefix with a single quote)
                     worksheet.set_column(
-                        f"{col_letter}:{col_letter}", None, text_format
+                        f"{excel_col_letter}:{excel_col_letter}", None, text_format
                     )
 
                     for row_idx in range(
@@ -297,12 +390,16 @@ def main():
     else:
         print("  No matching files found.")
 
+    print("Reading excel file...")
     df_all = pd.read_excel(latest_file)
+    print("  Done!")
+    print("Creating data frame...")
     df_all = df_all[
-        (df_all["Status"].str.lower() != "archived") & (df_all["Published"] == True)
-    ]  # Filter out archived rows, and not published (draft products are not published)
+        (df_all["Status"].str.lower() != "archived") & (df_all["Published"] != False)
+    ]  # Filter out archived rows
     df_all_first_few = df_all.head(1000)
 
+    print("  Done!")
     # Create a URL df
     print("\nProcessing image URLs and creating data frame...")
     df_images = (
@@ -321,5 +418,4 @@ def main():
 
 # Run the main function with cProfile
 if __name__ == "__main__":
-
     cProfile.run("main()", "profile_output.prof")

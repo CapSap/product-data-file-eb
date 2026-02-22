@@ -3,45 +3,131 @@ import glob
 import cProfile
 import re
 import time
-import argparse
 import numpy as np
 import pandas as pd
 from tqdm import tqdm
-from utils.cli import parse_args
+import argparse
 from xlsxwriter.utility import xl_col_to_name
 
-from utils.helpers import (
-    match_string_in_url,
-    get_sku_wo_size,
-    create_parent_rows,
-    clean_tags,
-)
+from utils.helpers import match_string_in_url, get_parent_sku
 
 
 def main():
-    args = parse_args()
+    parser = argparse.ArgumentParser(
+        description="Create a product data file for distribution to EB customers, including url link to images"
+    )
+    parser.add_argument(
+        "--no-html",
+        action="store_true",
+        help="in the product description, html tags will be removed",
+    )
+    args = parser.parse_args()
+    """transform excel file into another csv file"""
+    # set for the get wo size function
+    KNOWN_SIZES = {  # pylint: disable=invalid-name
+        "0",
+        "26",
+        "28",
+        "30",
+        "32",
+        "34",
+        "35",
+        "36",
+        "37",
+        "38",
+        "39",
+        "40",
+        "41",
+        "42",
+        "43",
+        "44",
+        "45",
+        "46",
+        "47",
+        "48",
+        "50",
+        "52",
+        "54",
+        "56",
+        "58",
+        "60",
+        "62",
+        "64",
+        "66",
+        "68",
+        "2XL",
+        "3XL",
+        "4XL",
+        "5XL",
+        "6XL",
+        "7XL",
+        "8XL",
+        "L",
+        "LXL",
+        "M",
+        "S",
+        "SM",
+        "XL",
+        "XXL",
+        "XS",
+        "XXS",
+    }
 
-    # notes what options should i allow
-    # hoops = tags column
-    # iws = has some specific columns that they want. there is an extra column for parent sku,
-    # whereas in normal i think we have a new seperate row for parent.
+    # Function to remove size from sku
+    def get_sku_wo_size(sku):
+        sku = str(sku)  # Ensure it's a string
+        parts = sku.split("-")
 
-    # generic:
-    # include a parent row or not
-    # include shopify ids for our own use
-    # include discontinued skus
-    # calculate a gst price
+        if len(parts) >= 2 and parts[-1] in KNOWN_SIZES:
+            return "-".join(parts[:-1])  # Remove the last part if it's a known size
 
-    # more todos:
-    # refactor html body. replace with ffill()
-    # ignore emb skus
+        return sku  # Keep everything if no size is detected
 
-    # i need to exclude products where the metafield hidefromsearch = 1
-    # seo.hidden - looks like a shopify built in
+    # tags to include
+    ALLOWED_TAGS = {
+        "Accessories",
+        "Activewear",
+        "Adult/Men",
+        "Aprons",
+        "Bags",
+        "Bib Aprons",
+        "Caps",
+        "Chef Hats",
+        "Chef Jackets",
+        "Chef Pants",
+        "Chef Shirts",
+        "chef shoes",
+        "Dress Shirts",
+        "Gloves",
+        "Jackets",
+        "Jumpers & Hoodies",
+        "Kids",
+        "Kids Aprons",
+        "Mens",
+        "Outerwear",
+        "Pants",
+        "Polo Shirts",
+        "Shirts",
+        "Shorts",
+        "T-Shirts",
+        "Urban Aprons",
+        "Wide Brim Hats",
+        "Waiter Vests",
+        "Womens Chef Jackets",
+        "Womens Pants",
+        "Youth",
+    }
 
-    # main function
+    # Function to clean tags column
+    def clean_tags(tag_string):
+        if pd.isna(tag_string):
+            return ""
+        tags = [tag.strip() for tag in str(tag_string).split(",")]
+        valid_tags = [tag for tag in tags if tag in ALLOWED_TAGS]
+        return ", ".join(valid_tags)
+
     def process_data(df_input, args):
-        print("Starting data processing...")
+        print("\nStarting data processing...")
 
         start_time = time.time()
         # Enable tqdm for pandas apply
@@ -54,38 +140,27 @@ def main():
             total=len(df_input),
             desc="  Generating image_alt",
         )
-        print("  Done!")
+
+        print("    Done!")
+        print("  Getting parent SKUs..")
+        df_input["Parent SKU"] = df_input["Variant SKU"].progress_apply(get_parent_sku)
+
+        print("    Done!")
+
+        # calcualte RRP with gst
+        print("  Calculating GST price..")
+        df_input["RRP inc GST"] = (
+            df_input["Variant Price"].astype(float).mul(1.1).round(2)
+        )
+        print("    Done!")
 
         # Remove rows where the column is blank (NaN or empty)
         df_cleaned = df_input.dropna(subset=["Variant SKU"])
 
-        # remove unpublished skus
-        # remove archived skus
-
-        # Remove discontinued skus
-        df_cleaned = df_cleaned[
-            df_cleaned[
-                "Variant Metafield: custom.product_status [single_line_text_field]"
-            ]
-            != "Discontinued"
-        ]
-
-        # Remove products that are set to hide from search (seo.hidden)
-        # Force column to numeric (errors='coerce' turns non-numbers into NaN)
-        seo_col = "Metafield: seo.hidden [number_integer]"
-        df_cleaned[seo_col] = pd.to_numeric(df_cleaned[seo_col], errors="coerce")
-
-        # Group by 'Handle' and forward-fill the SEO column
-        # This copies the "1" from the first row to all other rows with the same handle
-        df_cleaned[seo_col] = df_cleaned.groupby("ID")[seo_col].ffill()
-
-        # 3. Now you can safely filter.
-        # Rows that were originally empty but belonged to a 'hidden' parent are now '1'
-        df_cleaned = df_cleaned[df_cleaned[seo_col] != 1]
-
         # Define the base columns to keep
         columns_to_keep = [
             "Variant SKU",
+            "Parent SKU",
             "ID",
             "Title",
             "Body HTML",
@@ -98,27 +173,22 @@ def main():
             "Variant Price",
             "image_alt",
             "Tags",
+            "RRP inc GST",
         ]
 
-        # Identify dynamically generated URL columns
-        url_columns = [col for col in df_cleaned.columns if col.startswith("url_")]
-
-        # Combine base columns with URL columns
-        final_columns = columns_to_keep + url_columns
-
         # Keep only the whitelisted columns
-        df_cleaned = df_cleaned[final_columns]
+        df_cleaned = df_cleaned[columns_to_keep]
 
         # Optionally, reset the index after dropping rows
         df_cleaned = df_cleaned.reset_index(drop=True)
 
         # only have allowed tag values
-        print("Cleaning Tags column...")
+        print("  Cleaning Tags column...")
         df_cleaned["Tags"] = df_cleaned["Tags"].apply(clean_tags)
-        print("  Done!")
+        print("    Done!")
 
         # HTML Description Matching Logic
-        print("\nMatching HTML descriptions...")
+        print("  Matching HTML descriptions...")
         # create a dictionary that is { first sku word : html body } and optionally remove the html tags
         html_map = (
             df_all[df_all["Body HTML"].notna()]
@@ -127,6 +197,7 @@ def main():
             .apply(lambda x: re.sub(r"<[^>]*>", "", x) if args.no_html else x)
             .to_dict()
         )
+        print("    Done!")
 
         # this func accepts a row, and matches it with the dictionary { first sku word : html body }
         # if nothing is found in the map, return the html body that already exists on the row
@@ -139,9 +210,11 @@ def main():
         df_cleaned["Body HTML"] = df_cleaned.progress_apply(
             find_html_description, axis=1
         )
+
         # Step 2: Function to process each row and match
 
         def process_row(index, row):
+
             # Get the search string from image_alt column
             parent_id = row["ID"]
             search_string = (
@@ -162,50 +235,110 @@ def main():
                 match = filtered_images[mask]
             else:
                 # add a log to display when the ID search fails
-                print(f"Fallback triggered for SKU: {search_string} (ID: {parent_id})")
+                print(
+                    f"    Fallback triggered for SKU: {search_string} (ID: {parent_id})"
+                )
                 mask = df_images["Trimmed Src"].apply(
                     lambda x: match_string_in_url(search_string, str(x))
                 )
                 match = df_images[mask]
             # If matches are found, append them to the row in separate columns
             if not match.empty:
-                for i, value in enumerate(match["Image Src"].values):
-                    column_name = f"url_{i+1}"
-                    df_cleaned.at[index, column_name] = value
+                urls = match["Image Src"].values
+                if len(urls) > 0:
+                    df_cleaned.at[index, "Primary Image URL"] = urls[0]
+                if len(urls) > 1:
+                    df_cleaned.at[index, "Additional Image URLs"] = ", ".join(urls[1:])
 
         # Apply the function to each row with tqdm progress bar
-        print("\nMatching images...")
+        print("  Matching images...")
         with tqdm(total=len(df_cleaned), desc="  Processing image matches") as pbar:
             for index, row in df_cleaned.iterrows():
                 process_row(index, row)
                 pbar.update(1)
-        print("  Done!")
-
-        # Create parent rows and merge with cleaned data
-        print("\nCreating parent rows...")
-        # parent_rows = create_parent_rows(df_cleaned)
-        print("  Done!")
+        print("    Done!")
 
         print("\nFinalizing data...")
         with tqdm(total=3, desc="Saving files") as pbar:
-            final_df = (
-                # pd.concat([df_cleaned, parent_rows], ignore_index=True)
-                df_cleaned.drop_duplicates(subset=["Variant SKU"], keep="first")
-                .sort_values(by="Variant SKU")
-                .drop(columns=["image_alt", "ID"])
-            )
+            final_df = df_cleaned.drop(columns=["image_alt", "ID"])
             # Rename columns
             final_df.rename(
                 columns={
+                    "Variant SKU": "Supplier Article Number",
+                    "Variant Barcode": "EAN",
+                    "Title": "Style Name",
                     "Vendor": "Brand",
-                    "Body HTML": "Description (HTML)",
+                    "Body HTML": "Long Description",
                     "Option1 Value": "Colour",
                     "Option2 Value": "Size",
-                    "Variant Price": "RRP Price",
-                    "Variant SKU": "Product SKU",
+                    "Variant Price": "RRP ex GST",
                 },
                 inplace=True,
             )
+
+            # reorder columns
+            desired_column_order = [
+                "Tags",
+                "Supplier Article Number",
+                "EAN",
+                "Parent SKU",
+                "Style Name",
+                "main product name",
+                "Size",
+                "Colour",
+                "item name (variant)",
+                "size code",
+                "short description",
+                "Long Description",
+                "country of origin",
+                "warranty",
+                "list price ex gst",
+                "wl discount",
+                "net price ex gst",
+                "net price inc gst",
+                "RRP inc GST",
+                "RRP ex GST",
+                "qty break 2",
+                "list price 2",
+                "net list price 2",
+                "qty break 3",
+                "list price 3",
+                "net list price 3",
+                "qty break 4",
+                "list price 4",
+                "net list price 4",
+                "qty break 5",
+                "list price 5",
+                "net list price 5",
+                "Brand",
+                "supplier",
+                "Primary Image URL",
+                "Additional Image URLs",
+                "Size Guide",
+                "Spec Sheet",
+                "Product URL (Supplier Website)",
+                "Marketing Collatoral",
+                "Features",
+                "Benefits",
+                "Size Range",
+                "Tape Type",
+                "Primary Material",
+                "Secondary Fabric / Material",
+                "UOM",
+                "MOQ",
+                "QTY",
+                "Variant Weight",
+                "Variant Weight Unit",
+            ]
+
+            url_columns = [col for col in final_df.columns if col.startswith("url_")]
+
+            # Insert blank columns for any that are missing
+            for col in desired_column_order:
+                if col not in final_df.columns:
+                    final_df[col] = ""
+            final_df = final_df[desired_column_order + url_columns]
+
             pbar.update(1)
 
             # Get current date and time formatted as 'YYYY-MM-DD_HH-MM-SS'
@@ -275,7 +408,7 @@ def main():
             pbar.update(1)
 
         # Display completion message
-        print("Script completed successfully!")
+        print("  Script completed successfully!")
 
         # Calculate the elapsed time and display it
         elapsed_time = time.time() - start_time
@@ -297,14 +430,18 @@ def main():
     else:
         print("  No matching files found.")
 
+    print("Reading excel file...")
     df_all = pd.read_excel(latest_file)
+    print("  Done!")
+    print("Creating data frame...")
     df_all = df_all[
-        (df_all["Status"].str.lower() != "archived") & (df_all["Published"] == True)
-    ]  # Filter out archived rows, and not published (draft products are not published)
+        (df_all["Status"].str.lower() != "archived") & (df_all["Published"] != False)
+    ]  # Filter out archived rows
     df_all_first_few = df_all.head(1000)
 
+    print("  Done!")
     # Create a URL df
-    print("\nProcessing image URLs and creating data frame...")
+    print("Processing image URLs and creating data frame...")
     df_images = (
         df_all[["ID", "Image Src"]].drop_duplicates().dropna().reset_index(drop=True)
     )
@@ -312,7 +449,6 @@ def main():
     df_images["Trimmed Src"] = df_images["Image Src"].str.extract(
         r"https://cdn\.shopify\.com/s/files/1/0799/3953/5165/[^/]+/(.*)"
     )
-
     print("  Done!")
 
     # call the main function
